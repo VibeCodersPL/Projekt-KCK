@@ -90,7 +90,9 @@ with vision.PoseLandmarker.create_from_options(options) as landmarker:
             landmarks = result.pose_landmarks[0]
             bdlm.set(landmarks)
             litera = bdlm.detect()
-
+            # RYSOWANIE RĘCZNE (bez solutions) test
+            # RYSOWANIE RĘCZNE (bez solutions) test
+            # RYSOWANIE RĘCZNE (bez solutions) test
             # RYSOWANIE RĘCZNE (bez solutions)
             # 1. Rysowanie linii (połączeń)
             for connection in POSE_CONNECTIONS:
