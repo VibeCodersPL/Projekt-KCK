@@ -55,6 +55,8 @@ class BodyLandmarks:
         if l_shoulder_angle > 170 and r_shoulder_angle > 170:
             return "I"
         # L: Prawa ręka w górę, lewa w bok
+        # L: Prawa ręka w górę, lewa w bok tets
+        # L: Prawa ręka w górę, lewa w bok test
         if r_shoulder_angle > 160 and abs(90 - l_shoulder_angle) < 25:
             return "L"
 
@@ -90,9 +92,6 @@ with vision.PoseLandmarker.create_from_options(options) as landmarker:
             landmarks = result.pose_landmarks[0]
             bdlm.set(landmarks)
             litera = bdlm.detect()
-            # RYSOWANIE RĘCZNE (bez solutions) test
-            # RYSOWANIE RĘCZNE (bez solutions) test
-            # RYSOWANIE RĘCZNE (bez solutions) test
             # RYSOWANIE RĘCZNE (bez solutions)
             # 1. Rysowanie linii (połączeń)
             for connection in POSE_CONNECTIONS:
