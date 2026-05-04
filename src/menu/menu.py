@@ -27,7 +27,15 @@ class MenuScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         wid = Widget()
-        layout = BoxLayout(orientation='vertical', size_hint=(None, None), size=(350, 250), spacing=20)
+        layout = BoxLayout(orientation='vertical', size_hint=(None, None), size=(350, 320), spacing=20)
+        main_text = Label(
+            text='Cyber-Trener',
+            font_size='32sp',
+            bold=True,
+            size_hint_y=None,
+            height=50
+        )
+        layout.add_widget(main_text)
         self.screen_mapping = {
             'Trening wspierany': 'Trening wspierany',
             'Trening jednego elementu': 'WyborWzorca',
