@@ -14,7 +14,7 @@ from kivy.clock import Clock
 
 from Trening_Wspierany import *
 from Wzorowy_Pokaz import *
-from Wybor_Wzorca import *
+from Trening_Jednego_Elementu import *
 from RoundedButton import *
 from src.base_detection import *
 
@@ -33,7 +33,7 @@ class MenuScreen(Screen):
         layout.add_widget(main_text)
         self.screen_mapping = {
             'Trening wspierany': 'Trening wspierany',
-            'Trening jednego elementu': 'WyborWzorca',
+            'Trening jednego elementu': 'TreningJednegoElementu',
             'Wzorowy pokaz': 'WzorowyPokaz'
         }
         self.menu_buttons = []
@@ -169,7 +169,7 @@ class Menu(App):
         sm = ScreenManager(transition=NoTransition())
         sm.add_widget(MenuScreen(name='menu'))
         sm.add_widget(TreningWspierany(name='Trening wspierany'))
-        sm.add_widget(WyborWzorca(name='WyborWzorca'))
+        sm.add_widget(Trening_Jednego_Elementu(name='TreningJednegoElementu'))
         sm.add_widget(WzorowyPokaz(name='WzorowyPokaz'))
         return sm
 

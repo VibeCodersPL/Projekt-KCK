@@ -2,7 +2,7 @@ from kivy.properties import partial
 from kivy.uix.screenmanager import Screen
 from kivy.uix.button import Button
 
-class WyborWzorca(Screen):
+class Trening_Jednego_Elementu(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         btn = Button(text="Powrot do Menu",size_hint=(None,None), size=(200, 50))
