@@ -12,6 +12,11 @@ from kivy.graphics import RoundedRectangle, Color
 from kivy.uix.image import Image
 from kivy.clock import Clock
 
+import os
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+
 from Trening_Wspierany import *
 from Wzorowy_Pokaz import *
 from Trening_Jednego_Elementu import *
