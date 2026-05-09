@@ -82,26 +82,34 @@ class MenuScreen(Screen):
         self.fill_rectangle = None
 
     def on_enter(self):
-        self.detector = BaseDetection()
-        self.cap = cv2.VideoCapture(0)
-        self.update = Clock.schedule_interval(self.update_frame, 1/20)
+        self.detector = self.manager.shared_detector
+        Clock.schedule_once(self._late_camera_init, 0.2)
+
+    def _late_camera_init(self, dt):
+        self.cap = cv2.VideoCapture(0, cv2.CAP_V4L2) 
+        if self.cap.isOpened():
+            self.update_event = Clock.schedule_interval(self.update_frame, 1/30)
+        else:
+            print("Kamera nadal zablokowana przez system.")
+
+
 
     def on_leave(self):
         if self.update:
             self.update.cancel()
         if self.cap:
             self.cap.release()
-        if self.detector:
-            self.detector.close()
+            self.cap = None
+        self.detector = None
+
+        
+
         self.clean()
         self.button_hover = None
         self.cursor.pos=(-100,-100)
 
-    def get_hand_coords(self, landmarks):
-        right_hand = landmarks[19]
-        if right_hand.visibility > 0:
-            return (right_hand.x, right_hand.y)
-        return None
+ 
+
 
     def update_frame(self,dt):
         if not self.cap or not self.cap.isOpened():
@@ -113,8 +121,7 @@ class MenuScreen(Screen):
         frame = cv2.flip(frame, 1)
         _, result = self.detector.process_frame(frame)
         cursor_pos = None
-        if result and result.pose_landmarks:
-            cursor_pos = self.get_hand_coords(result.pose_landmarks[0])
+        cursor_pos = self.detector.get_hand_coords();
 
         if cursor_pos is not None:
             x, y = cursor_pos
@@ -170,8 +177,13 @@ class MenuScreen(Screen):
             self.manager.current = target_screen
 
 class Menu(App):
+    
+    
+    
     def build(self):
+    
         sm = ScreenManager(transition=NoTransition())
+        sm.shared_detector = BaseDetection()
         sm.add_widget(MenuScreen(name='menu'))
         sm.add_widget(TreningWspierany(name='Trening wspierany'))
         sm.add_widget(Trening_Jednego_Elementu(name='TreningJednegoElementu'))

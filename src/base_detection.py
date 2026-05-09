@@ -1,3 +1,5 @@
+import math
+
 import cv2
 import mediapipe as mp
 import time
@@ -14,8 +16,11 @@ class BaseDetection:
             (16, 18), (16, 22), (16, 20), (18, 20),  # Prawa dłoń
             (15, 21), (15, 19), (15, 17), (17, 19),  # Lewa dłoń
             (24, 26), (26, 28), (28, 30), (28, 32), (30, 32),  # Prawa noga
-            (23, 25), (25, 27), (27, 31), (27, 29), (31, 29)  # Lewa noga
+            (23, 25), (25, 27), (27, 31), (27, 29), (31, 29),  # Lewa noga
+            (8,6),(6,5),(5,4),(4,0),(0,1),(1,2),(2,3),(3,7),(10,9) #Twarz
         ]
+        
+        self.landmarks = []
 
         current_dir = os.path.dirname(os.path.abspath(__file__))
         model_path = os.path.join(current_dir, 'pose_landmarker_lite.task')
@@ -28,7 +33,7 @@ class BaseDetection:
 
         self.landmarker = vision.PoseLandmarker.create_from_options(options)
 
-    def process_frame(self, frame):
+    def process_frame(self, frame, landmarking:bool = False, connecting:bool = False):
 
         h, w, _ = frame.shape
 
@@ -37,23 +42,68 @@ class BaseDetection:
         timestamp = int(time.time() * 1000)
 
         result = self.landmarker.detect_for_video(mp_image, timestamp)
-
+    
         if result.pose_landmarks:
             landmarks = result.pose_landmarks[0]
+            self.landmarks = landmarks
+            
+            #connecting
+            if connecting:
+                for connection in self.POSE_CONNECTIONS:
+                    start_point = landmarks[connection[0]]
+                    end_point = landmarks[connection[1]]
+                    cv2.line(frame,
+                            (int(start_point.x * w), int(start_point.y * h)),
+                            (int(end_point.x * w), int(end_point.y * h)),
+                            (255, 255, 0), 2)
 
-            for connection in self.POSE_CONNECTIONS:
-                start_point = landmarks[connection[0]]
-                end_point = landmarks[connection[1]]
-                cv2.line(frame,
-                         (int(start_point.x * w), int(start_point.y * h)),
-                         (int(end_point.x * w), int(end_point.y * h)),
-                         (255, 255, 0), 2)
+            #landmarking
+            if landmarking:
+                for lm in landmarks:
+                    cx, cy = int(lm.x * w), int(lm.y * h)
+                    cv2.circle(frame, (cx, cy), 5, (0, 0, 255), -1)
 
-            for lm in landmarks:
-                cx, cy = int(lm.x * w), int(lm.y * h)
-                cv2.circle(frame, (cx, cy), 5, (0, 0, 255), -1)
+            print(landmarks[14])
+            self._printDegOnLandmark(frame,landmarks[14],20)
+            self._printDegCircOnLandmark(frame,landmarks[14],20)
 
         return frame, result
+
+
+    def get_hand_coords(self):        
+        right_hand = self.landmarks[19]
+        if right_hand.visibility > 0:
+            return (right_hand.x, right_hand.y)
+        return None
+    
+    def _printDegOnLandmark(self,frame, landmark, degree:int): 
+        h, w, _ = frame.shape    
+        frame = cv2.putText(frame, str(degree) , (int(landmark.x * w), int(landmark.y * h)), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)            
+        return frame
+    
+    def _printDegCircOnLandmark(self,frame, landmark, degree:int): 
+        h, w, _ = frame.shape    
+        frame = cv2.ellipse(
+            frame, 
+            (int(landmark.x * w), int(landmark.y * h)), # Centrum
+            (140, 140),   # Rozmiar (osie)
+            0,          # Obrót elipsy
+            0,          # Start kąta
+            degree,     # Koniec kąta
+            (255, 0, 0),# Kolor BGR
+            -1           # Grubość linii 
+            
+        )
+
+        return frame
+    
+    def __calculateThreePointAngle(self,leftP, midP, rightP):
+        '''returns angle in degrees'''
+        dis = lambda p1, p2: math.sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2))                
+        return math.degrees(math.acos((math.pow(dis(midP, leftP), 2) + math.pow(dis(midP, rightP), 2) - math.pow(dis(rightP, leftP), 2)) / (2 * dis(leftP, midP) * dis(rightP, midP))))
+
+
+
 
     def close(self):
         self.landmarker.close()
