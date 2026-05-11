@@ -6,8 +6,9 @@ from kivy.uix.image import Image
 from kivy.clock import Clock
 from kivy.graphics.texture import Texture
 import cv2
+import detection.excersises as ex
 
-
+screenExcersise = ex.LowReady()
 
 
 class Trening_Jednego_Elementu(Screen):
@@ -50,6 +51,10 @@ class Trening_Jednego_Elementu(Screen):
                 
                 processed_frame, result = self.detector.process_frame(frame)
                 
+                if(self.detector.checkExcersise(screenExcersise) == False):
+                    print("niepoprawnie wykonywane cwiczenie")
+                else:
+                    print("super ci idzie")
 
                 buf = cv2.flip(processed_frame, 0).tobytes()
                 
