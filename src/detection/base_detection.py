@@ -70,7 +70,9 @@ class BaseDetection:
         return frame, result
 
 
-    def get_hand_coords(self):        
+    def get_hand_coords(self):
+        if not self.landmarks or len(self.landmarks) <= 19:
+            return None
         right_hand = self.landmarks[19]
         if right_hand.visibility > 0:
             return (right_hand.x, right_hand.y)
