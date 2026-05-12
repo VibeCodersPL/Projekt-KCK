@@ -92,7 +92,7 @@ class MenuScreen(Screen):
     def _late_camera_init(self, dt):
         self.cap = cv2.VideoCapture(0)
         if self.cap.isOpened():
-            self.update_event = Clock.schedule_interval(self.update_frame, 1/30)
+            self.update = Clock.schedule_interval(self.update_frame, 1/30)
         else:
             print("Kamera nadal zablokowana przez system.")
 
@@ -101,6 +101,7 @@ class MenuScreen(Screen):
     def on_leave(self):
         if self.update:
             self.update.cancel()
+            self.update = None
         if self.cap:
             self.cap.release()
             self.cap = None
@@ -111,7 +112,7 @@ class MenuScreen(Screen):
         self.clean()
         self.button_hover = None
         self.cursor.pos=(-100,-100)
-
+        self.cursor.source = "../assets/lapka1.png"
  
 
 
