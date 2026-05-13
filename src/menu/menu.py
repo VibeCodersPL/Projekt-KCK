@@ -76,6 +76,7 @@ class MenuScreen(Screen):
         self.fill_color = None
         self.fill_rectangle = None
 
+
     def clean(self):
         if self.button_hover and self.fill_color and self.fill_rectangle:
             if self.fill_color in self.button_hover.canvas.after.children:
@@ -186,7 +187,7 @@ class Menu(App):
     
     
     def build(self):
-    
+        Window.fullscreen = 'auto'
         sm = ScreenManager(transition=NoTransition())
         sm.shared_detector = BaseDetection()
         sm.add_widget(MenuScreen(name='menu'))
