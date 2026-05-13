@@ -6,7 +6,7 @@ import time
 import os
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
-
+import detection.excersises as ex
 
 class BaseDetection:
     def __init__(self):
@@ -63,14 +63,16 @@ class BaseDetection:
                     cx, cy = int(lm.x * w), int(lm.y * h)
                     cv2.circle(frame, (cx, cy), 5, (0, 0, 255), -1)
 
-            print(landmarks[14])
+            #print(landmarks[14])
             self._printDegOnLandmark(frame,landmarks[14],20)
             self._printDegCircOnLandmark(frame,landmarks[14],20)
 
         return frame, result
 
 
-    def get_hand_coords(self):        
+    def get_hand_coords(self):
+        if not self.landmarks or len(self.landmarks) <= 19:
+            return None
         right_hand = self.landmarks[19]
         if right_hand.visibility > 0:
             return (right_hand.x, right_hand.y)
@@ -97,12 +99,24 @@ class BaseDetection:
 
         return frame
     
-    def __calculateThreePointAngle(self,leftP, midP, rightP):
+    
+    def checkExcersise(self, excersise:ex.Exercise, includeSide:bool = False) -> bool:
+    
+        for cond in excersise.getFrontAngleConditions():
+            angle = self.__calculateThreePointAngle(self.landmarks[cond.landmarks[0]], self.landmarks[cond.landmarks[1]], self.landmarks[cond.landmarks[2]])
+            if abs(angle - cond.degree) - (cond.degree * cond.tolerance) > 0:
+                return False
+         
+        return True
+    
+    
+    def __calculateThreePointAngle(self,leftP, midP, rightP) -> int:
         '''returns angle in degrees'''
         dis = lambda p1, p2: math.sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2))                
-        return math.degrees(math.acos((math.pow(dis(midP, leftP), 2) + math.pow(dis(midP, rightP), 2) - math.pow(dis(rightP, leftP), 2)) / (2 * dis(leftP, midP) * dis(rightP, midP))))
+        return int(math.degrees(math.acos((math.pow(dis(midP, leftP), 2) + math.pow(dis(midP, rightP), 2) - math.pow(dis(rightP, leftP), 2)) / (2 * dis(leftP, midP) * dis(rightP, midP)))))
 
 
+    
 
 
     def close(self):

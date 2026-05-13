@@ -15,13 +15,17 @@ from kivy.clock import Clock
 import os
 import sys
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+current_dir = os.path.dirname(__file__)
+src_path = os.path.abspath(os.path.join(current_dir, '..'))
 
+if src_path not in sys.path:
+    sys.path.append(src_path)
+    
 from Trening_Wspierany import *
 from Wzorowy_Pokaz import *
 from Trening_Jednego_Elementu import *
 from RoundedButton import *
-from src.base_detection import *
+from detection.base_detection import *
 
 class MenuScreen(Screen):
     def __init__(self, **kwargs):
@@ -72,6 +76,7 @@ class MenuScreen(Screen):
         self.fill_color = None
         self.fill_rectangle = None
 
+
     def clean(self):
         if self.button_hover and self.fill_color and self.fill_rectangle:
             if self.fill_color in self.button_hover.canvas.after.children:
@@ -86,9 +91,9 @@ class MenuScreen(Screen):
         Clock.schedule_once(self._late_camera_init, 0.2)
 
     def _late_camera_init(self, dt):
-        self.cap = cv2.VideoCapture(0, cv2.CAP_V4L2) 
+        self.cap = cv2.VideoCapture(0)
         if self.cap.isOpened():
-            self.update_event = Clock.schedule_interval(self.update_frame, 1/30)
+            self.update = Clock.schedule_interval(self.update_frame, 1/30)
         else:
             print("Kamera nadal zablokowana przez system.")
 
@@ -97,6 +102,7 @@ class MenuScreen(Screen):
     def on_leave(self):
         if self.update:
             self.update.cancel()
+            self.update = None
         if self.cap:
             self.cap.release()
             self.cap = None
@@ -107,7 +113,7 @@ class MenuScreen(Screen):
         self.clean()
         self.button_hover = None
         self.cursor.pos=(-100,-100)
-
+        self.cursor.source = "../assets/lapka1.png"
  
 
 
@@ -181,7 +187,7 @@ class Menu(App):
     
     
     def build(self):
-    
+        Window.fullscreen = 'auto'
         sm = ScreenManager(transition=NoTransition())
         sm.shared_detector = BaseDetection()
         sm.add_widget(MenuScreen(name='menu'))
