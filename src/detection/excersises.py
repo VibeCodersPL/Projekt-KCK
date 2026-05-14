@@ -11,16 +11,16 @@ class Exercise:
     def __init__(self, name: str):
         self.name = name
         
-        self.stateName = "BeforeStart"
+        self.stateName = "DEFAULT"
         
         self._frontAngleConditions = [
-            Condition([11,13,15],160,0.05),
-            Condition([12,14,16],160,0.05),
+            Condition([11,13,15],160,0.3),
+            Condition([12,14,16],160,0.3),
         ]
     
         self._sideAngleConditions = [
-            Condition([11,13,15],160,0.05),
-            Condition([12,14,16],160,0.05),
+            Condition([11,13,15],160,0.3),
+            Condition([12,14,16],160,0.3),
         ]
         
     def getFrontAngleConditions(self):
@@ -55,10 +55,19 @@ class Exercise:
     
 class LowReady(Exercise):
         
+    states = ["START"]    
+    stateIdx = 0
+    maxStateIdx = len(states)
+    
     def __init__(self):
         super().__init__("LowReady")
+        self.state = self.states[0]
 
-    def setState(self, stateName):
+    def setState(self, stateName: str | bool = False):
+        if(stateName == False or True):
+            self.stateIdx = self.stateIdx % self.maxStateIdx
+            self.state = self.states[self.stateIdx]
+        
         self.state = stateName
         
         if(stateName == "START"):
