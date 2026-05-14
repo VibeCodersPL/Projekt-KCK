@@ -11,12 +11,23 @@ class Exercise:
     def __init__(self, name: str):
         self.name = name
         
+        self.stateName = "BeforeStart"
         
-    def getFrontAngleConditions(self) -> List[Condition]:
-        raise NotImplementedError
+        self._frontAngleConditions = [
+            Condition([11,13,15],160,0.05),
+            Condition([12,14,16],160,0.05),
+        ]
     
-    def getSideAngleConditions(self) -> List[Condition]:
-        raise NotImplementedError
+        self._sideAngleConditions = [
+            Condition([11,13,15],160,0.05),
+            Condition([12,14,16],160,0.05),
+        ]
+        
+    def getFrontAngleConditions(self):
+        return self._frontAngleConditions
+        
+    def getSideAngleConditions(self):
+        return self._sideAngleConditions
     
     def checkExcersise(self, landmarks, isSide:bool = False) -> bool:
     
@@ -43,30 +54,35 @@ class Exercise:
     
     
 class LowReady(Exercise):
-    
-    
-    
+        
     def __init__(self):
         super().__init__("LowReady")
-        
-        self.__frontAngleConditions = [
-            Condition([11,13,15],160,0.05),
-            Condition([12,14,16],160,0.05),
-        ]
-    
-        self.__sideAngleConditions = [
-            Condition([11,13,15],160,0.05),
-            Condition([12,14,16],160,0.05),
-        ]
-        
-        
-        
-        
-    def getFrontAngleConditions(self):
-        return self.__frontAngleConditions
-        
-    def getSideAngleConditions(self):
-        return self.__sideAngleConditions
-    
+
     def setState(self, stateName):
         self.state = stateName
+        
+        if(stateName == "START"):
+            self._frontAngleConditions = [
+                Condition([11,13,15],160,0.05),
+                Condition([12,14,16],160,0.05),
+            ]
+        
+            self._sideAngleConditions = [
+                Condition([11,13,15],160,0.05),
+                Condition([12,14,16],160,0.05),
+            ]
+        
+        if(stateName == "END"):
+            self._frontAngleConditions = [
+                Condition([11,13,15],160,0.05),
+                Condition([12,14,16],160,0.05),
+            ]
+        
+            self._sideAngleConditions = [
+                Condition([11,13,15],160,0.05),
+                Condition([12,14,16],160,0.05),
+            ]
+
+    
+           
+           
