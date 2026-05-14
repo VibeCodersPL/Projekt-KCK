@@ -69,6 +69,8 @@ class BaseDetection:
 
         return frame, result
 
+    def getLandmarks(self):
+        return self.landmarks
 
     def getLandmarkCords(self, landmarkNumber:int):
         if not self.landmarks or len(self.landmarks) <= landmarkNumber:
@@ -99,27 +101,6 @@ class BaseDetection:
 
         return frame
     
-    
-    def checkExcersise(self, excersise:ex.Exercise, isSide:bool = False) -> bool:
-    
-        if(isSide):
-            conditions = excersise.getSideAngleConditions();
-        else: 
-            conditions = excersise.getFrontAngleConditions()
-            
-        for cond in conditions:
-            angle = self.__calculateThreePointAngle(self.landmarks[cond.landmarks[0]], self.landmarks[cond.landmarks[1]], self.landmarks[cond.landmarks[2]])
-            if abs(angle - cond.degree) - (cond.degree * cond.tolerance) > 0:
-                return False
-         
-        return True
-    
-    
-    def __calculateThreePointAngle(self,leftP, midP, rightP) -> int:
-        '''returns angle in degrees'''
-        dis = lambda p1, p2: math.sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2))                
-        return int(math.degrees(math.acos((math.pow(dis(midP, leftP), 2) + math.pow(dis(midP, rightP), 2) - math.pow(dis(rightP, leftP), 2)) / (2 * dis(leftP, midP) * dis(rightP, midP)))))
-
 
     
 

@@ -67,8 +67,9 @@ class TwoCameraFrameWindow(Screen):
             frame = cv2.flip(frame, 1)
 
             processed_frame, result = self.detector.process_frame(frame)
-
-            if (self.detector.checkExcersise(self.screenExcersise, isSide) == False):
+            landmarks = self.detector.getLandmarks()
+            
+            if (self.screenExcersise.checkExcersise(landmarks,isSide) == False):
                 print("niepoprawnie wykonywane cwiczenie")
             else:
                 print("super ci idzie")
