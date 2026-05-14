@@ -11,10 +11,14 @@ import cv2
 
 
 class TwoCameraFrameWindow(Screen):
+    
     corExcCtr = 0
+
     def __init__(self, **kwargs):
-        
+    
         super().__init__(**kwargs)
+        
+        #TODO to jest do poukładania
         btn = Button(text="Powrot do Menu",size_hint=(None,None), size=(200, 50))
         btn.bind(on_press=partial(self.change_screen, 'menu'))
         cameras_layout = BoxLayout(orientation = "horizontal", spacing=15, size_hint=(1,0.8))
