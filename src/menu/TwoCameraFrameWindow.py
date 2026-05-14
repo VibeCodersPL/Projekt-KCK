@@ -11,7 +11,9 @@ import cv2
 
 
 class TwoCameraFrameWindow(Screen):
+    corExcCtr = 0
     def __init__(self, **kwargs):
+        
         super().__init__(**kwargs)
         btn = Button(text="Powrot do Menu",size_hint=(None,None), size=(200, 50))
         btn.bind(on_press=partial(self.change_screen, 'menu'))
@@ -54,11 +56,19 @@ class TwoCameraFrameWindow(Screen):
                 return
 
             if(self.cap.isOpened()):
-                self.camera_view.texture = self.update_camera(self.cap)
+                self.camera_view.texture, frontExcOk = self.update_camera(self.cap)
                 
             if(self.cap2.isOpened()):
-                self.camera_view2.texture = self.update_camera(self.cap2, True)
+                self.camera_view2.texture, sideExcOk = self.update_camera(self.cap2, True)
 
+            #TODO: do przeniesc do klasy Excersise
+            if(frontExcOk, sideExcOk):
+                self.corExcCtr +=1
+                if(self.corExcCtr == 30):
+                    self.screenExcersise.setState()
+                    for _ in range(30) :
+                        print("nastepna faza cwiczenia")
+                    self.corExcCtr = 0
 
     def update_camera(self, cap, isSide:bool = False):
 
@@ -69,10 +79,14 @@ class TwoCameraFrameWindow(Screen):
             processed_frame, result = self.detector.process_frame(frame)
             landmarks = self.detector.getLandmarks()
             
-            if (self.screenExcersise.checkExcersise(landmarks,isSide) == False):
+            excCorrect = self.screenExcersise.checkExcersise(landmarks,isSide) 
+            
+            if (excCorrect == False):
                 print("niepoprawnie wykonywane cwiczenie")
             else:
                 print("super ci idzie")
+
+
 
             buf = cv2.flip(processed_frame, 0).tobytes()
 
@@ -84,7 +98,7 @@ class TwoCameraFrameWindow(Screen):
 
             texture.blit_buffer(buf, colorfmt='bgr', bufferfmt='ubyte')
 
-            return texture
+            return texture, excCorrect
 
     def on_leave(self):
         """Uruchamiane przy wychodzeniu - zwalnianie zasobów"""
