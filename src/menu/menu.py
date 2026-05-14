@@ -127,7 +127,7 @@ class MenuScreen(Screen):
         frame = cv2.flip(frame, 1)
         _, result = self.detector.process_frame(frame)
         cursor_pos = None
-        cursor_pos = self.detector.get_hand_coords();
+        cursor_pos = self.detector.getLandmarkCords(19);
 
         if cursor_pos is not None:
             x, y = cursor_pos

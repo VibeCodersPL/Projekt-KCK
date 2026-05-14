@@ -70,12 +70,12 @@ class BaseDetection:
         return frame, result
 
 
-    def get_hand_coords(self):
-        if not self.landmarks or len(self.landmarks) <= 19:
+    def getLandmarkCords(self, landmarkNumber:int):
+        if not self.landmarks or len(self.landmarks) <= landmarkNumber:
             return None
-        right_hand = self.landmarks[19]
-        if right_hand.visibility > 0:
-            return (right_hand.x, right_hand.y)
+        resLandmark = self.landmarks[landmarkNumber]
+        if resLandmark.visibility > 0:
+            return (resLandmark.x, resLandmark.y)
         return None
     
     def _printDegOnLandmark(self,frame, landmark, degree:int): 
@@ -100,9 +100,14 @@ class BaseDetection:
         return frame
     
     
-    def checkExcersise(self, excersise:ex.Exercise, includeSide:bool = False) -> bool:
+    def checkExcersise(self, excersise:ex.Exercise, isSide:bool = False) -> bool:
     
-        for cond in excersise.getFrontAngleConditions():
+        if(isSide):
+            conditions = excersise.getSideAngleConditions();
+        else: 
+            conditions = excersise.getFrontAngleConditions()
+            
+        for cond in conditions:
             angle = self.__calculateThreePointAngle(self.landmarks[cond.landmarks[0]], self.landmarks[cond.landmarks[1]], self.landmarks[cond.landmarks[2]])
             if abs(angle - cond.degree) - (cond.degree * cond.tolerance) > 0:
                 return False
