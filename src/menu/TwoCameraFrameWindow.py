@@ -65,10 +65,11 @@ class TwoCameraFrameWindow(Screen):
                 
             if(self.cap2.isOpened()):
                 self.camera_view2.texture, landmarksSide = self.update_camera(self.cap2, True)
-
-            #TODO: do przeniesc do klasy Excersise
             
-            self.screenExcersise.checkExcersise(landmarksFront,landmarksSide)
+            if self.screenExcersise.checkExcersise(landmarksFront,landmarksSide):
+                print("poprawnie wykonane")
+            else:
+                print("niepoprawnie wykonane")
             
                     
                     

@@ -9,6 +9,10 @@ class Condition:
 
 class Exercise:
     
+    __MAX_FRAMES = 60
+    __frameCounter = 0 
+    __lastFramesCorrectnessArray:int[60] = [0]
+    
     name = None
     stateName = None
     _frontAngleConditions = None
@@ -34,15 +38,26 @@ class Exercise:
             for cond in self._frontAngleConditions:
                 angle = self.__calculateThreePointAngle(landmarksFront[cond.landmarks[0]], landmarksFront[cond.landmarks[1]], landmarksFront[cond.landmarks[2]])
                 if abs(angle - cond.degree) - (cond.degree * cond.tolerance) > 0:
+                    self.__lastFramesCorrectnessArray[self.__frameCounter] = 0
+                    self.__frameCounter = (self.__frameCounter + 1) % self.__MAX_FRAMES
                     return False
                 
         if landmarksSide:
             for cond in self._frontAngleConditions:
                 angle = self.__calculateThreePointAngle(landmarksSide[cond.landmarks[0]], landmarksSide[cond.landmarks[1]], landmarksSide[cond.landmarks[2]])
                 if abs(angle - cond.degree) - (cond.degree * cond.tolerance) > 0:
+                    self.__lastFramesCorrectnessArray[self.__frameCounter] = 0
+                    self.__frameCounter = (self.__frameCounter + 1) % self.__MAX_FRAMES
                     return False
-            
+        
+                self.__lastFramesCorrectnessArray[self.__frameCounter] = 1
+                self.__frameCounter = (self.__frameCounter + 1) % self.__MAX_FRAMES
+                if sum(self.__lastFramesCorrectnessArray) / len(self.__lastFramesCorrectnessArray) / self.__MAX_FRAMES >= 0.6:
+                    pass
+                    #przeniesc set state z dziecka do rodzica i nadpisywać tylko nazwy        
         return True
+    
+    
     
     
     def __calculateThreePointAngle(self,leftP, midP, rightP) -> int:
