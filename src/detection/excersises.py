@@ -8,9 +8,14 @@ class Condition:
         self.tolerance = tolerance
 
 class Exercise:
+    
+    name = None
+    stateName = None
+    _frontAngleConditions = None
+    _sideAngleConditions = None
+    
     def __init__(self, name: str):
         self.name = name
-        
         self.stateName = "DEFAULT"
         
         self._frontAngleConditions = [
@@ -22,25 +27,21 @@ class Exercise:
             Condition([11,13,15],160,0.3),
             Condition([12,14,16],160,0.3),
         ]
-        
-    def getFrontAngleConditions(self):
-        return self._frontAngleConditions
-        
-    def getSideAngleConditions(self):
-        return self._sideAngleConditions
+
+    def checkExcersise(self, landmarksFront = None, landmarksSide = None) -> bool:
     
-    def checkExcersise(self, landmarks, isSide:bool = False) -> bool:
-    
-        if(isSide):
-            conditions = self.getSideAngleConditions();
-        else: 
-            conditions = self.getFrontAngleConditions()
+        if landmarksFront:
+            for cond in self._frontAngleConditions:
+                angle = self.__calculateThreePointAngle(landmarksFront[cond.landmarks[0]], landmarksFront[cond.landmarks[1]], landmarksFront[cond.landmarks[2]])
+                if abs(angle - cond.degree) - (cond.degree * cond.tolerance) > 0:
+                    return False
+                
+        if landmarksSide:
+            for cond in self._frontAngleConditions:
+                angle = self.__calculateThreePointAngle(landmarksSide[cond.landmarks[0]], landmarksSide[cond.landmarks[1]], landmarksSide[cond.landmarks[2]])
+                if abs(angle - cond.degree) - (cond.degree * cond.tolerance) > 0:
+                    return False
             
-        for cond in conditions:
-            angle = self.__calculateThreePointAngle(landmarks[cond.landmarks[0]], landmarks[cond.landmarks[1]], landmarks[cond.landmarks[2]])
-            if abs(angle - cond.degree) - (cond.degree * cond.tolerance) > 0:
-                return False
-         
         return True
     
     
@@ -49,7 +50,7 @@ class Exercise:
         dis = lambda p1, p2: math.sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2))                
         return int(math.degrees(math.acos((math.pow(dis(midP, leftP), 2) + math.pow(dis(midP, rightP), 2) - math.pow(dis(rightP, leftP), 2)) / (2 * dis(leftP, midP) * dis(rightP, midP)))))
 
-
+    
     
     
     
@@ -91,6 +92,7 @@ class LowReady(Exercise):
                 Condition([11,13,15],160,0.05),
                 Condition([12,14,16],160,0.05),
             ]
+
 
     
            

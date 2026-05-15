@@ -7,12 +7,13 @@ from kivy.uix.image import Image
 from kivy.clock import Clock
 from kivy.graphics.texture import Texture
 import cv2
-
+import detection.excersises as Ex
 
 
 class TwoCameraFrameWindow(Screen):
     
     corExcCtr = 0
+    screenExcersise: Ex.Exercise = None
 
     def __init__(self, **kwargs):
     
@@ -60,19 +61,17 @@ class TwoCameraFrameWindow(Screen):
                 return
 
             if(self.cap.isOpened()):
-                self.camera_view.texture, frontExcOk = self.update_camera(self.cap)
+                self.camera_view.texture, landmarksFront = self.update_camera(self.cap)
                 
             if(self.cap2.isOpened()):
-                self.camera_view2.texture, sideExcOk = self.update_camera(self.cap2, True)
+                self.camera_view2.texture, landmarksSide = self.update_camera(self.cap2, True)
 
             #TODO: do przeniesc do klasy Excersise
-            if(frontExcOk, sideExcOk):
-                self.corExcCtr +=1
-                if(self.corExcCtr == 30):
-                    self.screenExcersise.setState()
-                    for _ in range(30) :
-                        print("nastepna faza cwiczenia")
-                    self.corExcCtr = 0
+            
+            self.screenExcersise.checkExcersise(landmarksFront,landmarksSide)
+            
+                    
+                    
 
     def update_camera(self, cap, isSide:bool = False):
 
@@ -82,15 +81,6 @@ class TwoCameraFrameWindow(Screen):
 
             processed_frame, result = self.detector.process_frame(frame)
             landmarks = self.detector.getLandmarks()
-            
-            excCorrect = self.screenExcersise.checkExcersise(landmarks,isSide) 
-            
-            if (excCorrect == False):
-                print("niepoprawnie wykonywane cwiczenie")
-            else:
-                print("super ci idzie")
-
-
 
             buf = cv2.flip(processed_frame, 0).tobytes()
 
@@ -102,7 +92,7 @@ class TwoCameraFrameWindow(Screen):
 
             texture.blit_buffer(buf, colorfmt='bgr', bufferfmt='ubyte')
 
-            return texture, excCorrect
+            return texture, landmarks
 
     def on_leave(self):
         """Uruchamiane przy wychodzeniu - zwalnianie zasobów"""
