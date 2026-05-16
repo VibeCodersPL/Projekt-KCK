@@ -5,7 +5,7 @@ class Condition:
     def __init__(self, landmarks: List[int], degree: int, tolerance: int):
         self.landmarks = landmarks # Lista 3 punktów, np. [11, 13, 15]
         self.degree = degree
-        self.tolerance = tolerance
+        self.tolerance = tolerance    
 
 class Exercise:
     
@@ -17,7 +17,7 @@ class Exercise:
     
     
     _currentStateName = None
-    _states: dict[str, tuple[list[Condition], list[Condition]]] | None = None    
+    _states: dict[str, tuple[list[Condition], list[Condition], str]] | None = None    
     _statesNames = ["DEFAULT"]    
     _stateIdx = 0
     _maxStateIdx = 0
@@ -26,16 +26,15 @@ class Exercise:
     def __init__(self, name: str):
         self._excersiseName = name
         self._currentStateName = "DEFAULT"
-        
-        self._states.update("DEFAULT", ([
+        self._states = {}
+        self._states["DEFAULT"] = ([
             Condition([11,13,15],160,0.3),
             Condition([12,14,16],160,0.3)
         ],
         [
             Condition([11,13,15],160,0.3),
             Condition([12,14,16],160,0.3)
-        ]
-                                        ))
+        ], "START")
         
         
 
@@ -61,8 +60,10 @@ class Exercise:
         
         self.__lastFramesCorrectnessArray[self.__frameCounter] = 1
         self.__frameCounter = (self.__frameCounter + 1) % self.__MAX_FRAMES
-        if sum(self.__lastFramesCorrectnessArray) / len(self.__lastFramesCorrectnessArray) / self.__MAX_FRAMES >= 0.6:
+                
+        if sum(self.__lastFramesCorrectnessArray) / len(self.__lastFramesCorrectnessArray)>= 0.6:
             self.setState()
+            self.__lastFramesCorrectnessArray = [0] * 60
              
         return True
     
@@ -75,24 +76,48 @@ class Exercise:
         return int(math.degrees(math.acos((math.pow(dis(midP, leftP), 2) + math.pow(dis(midP, rightP), 2) - math.pow(dis(rightP, leftP), 2)) / (2 * dis(leftP, midP) * dis(rightP, midP)))))
 
     
-    def setState(self, stateName: str = None):
+    def setState(self, stateName: str | None = None):
         
         if(stateName == None):
-            self.stateIdx = self.stateIdx % self.maxStateIdx
-            self._currentStateName = self._statesNames[self.stateIdx]
+            self._stateIdx = (self._stateIdx + 1) % self._maxStateIdx
+            self._currentStateName = self._statesNames[self._stateIdx]
         else:
-            self.state = stateName
+            self._currentStateName = stateName
 
-        self.state
+        return self._currentStateName
     
+    def getMessage(self):
+        return (self._states.get(self._currentStateName))[2]
     
     
 class LowReady(Exercise):
     def __init__(self):
         super().__init__("LowReady")
+        
         self._statesNames.append("START")
         self._statesNames.append("END")
         
+        self._states["START"] = ([
+            Condition([11,13,15],160,0.3),
+            Condition([12,14,16],160,0.3)
+        ],
+        [
+            Condition([11,13,15],160,0.3),
+            Condition([12,14,16],160,0.3)
+        ], "Rozpocznij ćwiczenie")
+        
+        self._states["END"] = ([
+            Condition([11,13,15],160,0.3),
+            Condition([12,14,16],160,0.3)
+        ],
+        [
+            Condition([11,13,15],160,0.3),
+            Condition([12,14,16],160,0.3)
+        ], "Zakończ ćwiczenie")
+        
+        self._maxStateIdx = len(self._statesNames)
+        
+            
         
 
 

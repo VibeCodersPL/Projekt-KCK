@@ -2,7 +2,7 @@ from kivy.properties import partial
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.screenmanager import Screen
 from kivy.uix.button import Button
-
+from kivy.uix.label import Label
 from kivy.uix.image import Image
 from kivy.clock import Clock
 from kivy.graphics.texture import Texture
@@ -26,11 +26,11 @@ class TwoCameraFrameWindow(Screen):
         
         self.camera_view = Image(size_hint=(1, 0.5), pos_hint={'center_x': 0.25, 'center_y': 0.5})
         self.camera_view2 = Image(size_hint=(1, 0.5), pos_hint={'center_x': 0.25, 'center_y': 0.5})
-
+        self.text_box = Label(size_hint = (None, None), size=(200,100), pos_hint={'right':1, 'top':1})
         cameras_layout.add_widget(self.camera_view)
         cameras_layout.add_widget(self.camera_view2)
 
-        
+        self.add_widget(self.text_box)
         self.add_widget(btn)
         self.add_widget(cameras_layout)
         
@@ -71,6 +71,11 @@ class TwoCameraFrameWindow(Screen):
             else:
                 print("niepoprawnie wykonane")
             
+            msg = self.screenExcersise.getMessage()
+            print(msg)
+            self.text_box.text = msg
+                
+            
                     
                     
 
@@ -85,7 +90,6 @@ class TwoCameraFrameWindow(Screen):
 
             buf = cv2.flip(processed_frame, 0).tobytes()
 
-            # 2. Utworzenie tekstury (wymiary z klatki)
             texture = Texture.create(
                 size=(processed_frame.shape[1], processed_frame.shape[0]),
                 colorfmt='bgr'
