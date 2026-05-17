@@ -22,8 +22,10 @@ if src_path not in sys.path:
     sys.path.append(src_path)
     
 from Trening_Wspierany import *
-from Wzorowy_Pokaz import *
+from Wzorowy_Pokaz import WzorowyPokazScreen
 from Trening_Jednego_Elementu import *
+from PostawaKleczaca import *
+from PostawaStojaca import *
 from RoundedButton import *
 from detection.base_detection import *
 
@@ -193,7 +195,9 @@ class Menu(App):
         sm.add_widget(MenuScreen(name='menu'))
         sm.add_widget(TreningWspierany(name='Trening wspierany'))
         sm.add_widget(Trening_Jednego_Elementu(name='TreningJednegoElementu'))
-        sm.add_widget(WzorowyPokaz(name='WzorowyPokaz'))
+        sm.add_widget(WzorowyPokazScreen(name='WzorowyPokaz'))
+        sm.add_widget(PostawaStojaca(name='PostawaStojaca'))
+        sm.add_widget(PostawaKleczaca(name='PostawaKleczaca'))
         return sm
 
 
