@@ -12,7 +12,6 @@ import detection.excersises as Ex
 
 class TwoCameraFrameWindow(Screen):
     
-    corExcCtr = 0
     screenExcersise: Ex.Exercise = None
 
     def __init__(self, **kwargs):
