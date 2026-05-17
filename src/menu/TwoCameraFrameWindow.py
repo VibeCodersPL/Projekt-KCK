@@ -2,17 +2,18 @@ from kivy.properties import partial
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.screenmanager import Screen
 from kivy.uix.button import Button
-
+from kivy.uix.label import Label
 from kivy.uix.image import Image
 from kivy.clock import Clock
 from kivy.graphics.texture import Texture
 import cv2
-
+import detection.excersises as Ex
 
 
 class TwoCameraFrameWindow(Screen):
     
     corExcCtr = 0
+    screenExcersise: Ex.Exercise = None
 
     def __init__(self, **kwargs):
     
@@ -25,11 +26,11 @@ class TwoCameraFrameWindow(Screen):
         
         self.camera_view = Image(size_hint=(1, 0.5), pos_hint={'center_x': 0.25, 'center_y': 0.5})
         self.camera_view2 = Image(size_hint=(1, 0.5), pos_hint={'center_x': 0.25, 'center_y': 0.5})
-
+        self.text_box = Label(size_hint = (None, None), size=(200,100), pos_hint={'right':1, 'top':1})
         cameras_layout.add_widget(self.camera_view)
         cameras_layout.add_widget(self.camera_view2)
 
-        
+        self.add_widget(self.text_box)
         self.add_widget(btn)
         self.add_widget(cameras_layout)
         
@@ -60,19 +61,23 @@ class TwoCameraFrameWindow(Screen):
                 return
 
             if(self.cap.isOpened()):
-                self.camera_view.texture, frontExcOk = self.update_camera(self.cap)
+                self.camera_view.texture, landmarksFront = self.update_camera(self.cap)
                 
             if(self.cap2.isOpened()):
-                self.camera_view2.texture, sideExcOk = self.update_camera(self.cap2, True)
-
-            #TODO: do przeniesc do klasy Excersise
-            if(frontExcOk, sideExcOk):
-                self.corExcCtr +=1
-                if(self.corExcCtr == 30):
-                    self.screenExcersise.setState()
-                    for _ in range(30) :
-                        print("nastepna faza cwiczenia")
-                    self.corExcCtr = 0
+                self.camera_view2.texture, landmarksSide = self.update_camera(self.cap2, True)
+            
+            if self.screenExcersise.checkExcersise(landmarksFront,landmarksSide):
+                print("poprawnie wykonane")
+            else:
+                print("niepoprawnie wykonane")
+            
+            msg = self.screenExcersise.getMessage()
+            print(msg)
+            self.text_box.text = msg
+                
+            
+                    
+                    
 
     def update_camera(self, cap, isSide:bool = False):
 
@@ -82,19 +87,9 @@ class TwoCameraFrameWindow(Screen):
 
             processed_frame, result = self.detector.process_frame(frame)
             landmarks = self.detector.getLandmarks()
-            
-            excCorrect = self.screenExcersise.checkExcersise(landmarks,isSide) 
-            
-            if (excCorrect == False):
-                print("niepoprawnie wykonywane cwiczenie")
-            else:
-                print("super ci idzie")
-
-
 
             buf = cv2.flip(processed_frame, 0).tobytes()
 
-            # 2. Utworzenie tekstury (wymiary z klatki)
             texture = Texture.create(
                 size=(processed_frame.shape[1], processed_frame.shape[0]),
                 colorfmt='bgr'
@@ -102,7 +97,7 @@ class TwoCameraFrameWindow(Screen):
 
             texture.blit_buffer(buf, colorfmt='bgr', bufferfmt='ubyte')
 
-            return texture, excCorrect
+            return texture, landmarks
 
     def on_leave(self):
         """Uruchamiane przy wychodzeniu - zwalnianie zasobów"""
