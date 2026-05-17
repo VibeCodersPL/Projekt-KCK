@@ -66,6 +66,8 @@ class BaseDetection:
             #print(landmarks[14])
             self._printDegOnLandmark(frame,landmarks[14],20)
             self._printDegCircOnLandmark(frame,landmarks[14],20)
+        else:
+            self.landmarks = []
 
         return frame, result
 
