@@ -6,14 +6,28 @@ from time import time
 class Condition:
     '''Klasa warunku ćwiczenia'''
     def __init__(self, landmarks: List[int] = [11,13,15], degree: int = 160, tolerance: int = 0.3):
+        """Representation of one condition of excersise 
+
+        Args:
+            landmarks (List[int], optional): list of 3 points. Defaults to [11,13,15].
+            degree (int, optional): angle between points. Defaults to 160.
+            tolerance (int, optional): tolerance of angle. Defaults to 0.3.
+        """         
         self.landmarks = landmarks # Lista 3 punktów, np. [11, 13, 15]
         self.degree = degree
         self.tolerance = tolerance    
 
 
 class State:
-    '''klasa stanu ćwiczenia'''
+    
     def __init__(self, conditionFront:List[Condition] = [Condition()], conditionSide:List[Condition] = [Condition()], messege:str = "DEFAULT"):
+        """Representation of one state of excersise
+
+        Args:
+            conditionFront (List[Condition], optional): List of front conditions. Defaults to [Condition()].
+            conditionSide (List[Condition], optional): List of side conditions. Defaults to [Condition()].
+            messege (str, optional): state messege. Defaults to "DEFAULT".
+        """        ''''''
         self.conditonFront = conditionFront
         self.conditonSide = conditionSide
         self.messege = messege
@@ -21,11 +35,16 @@ class State:
         self.durationStats = []
         
     def start(self):
-        '''metoda zapisująca czas startu stanu ćwiczenia'''
+        """Sets start time for the excersise
+        """        ''''''
         self.startTime = time()
         
     def stop(self):
-        '''metoda resetująca czas startu stanu ćwiczenia, zwracająca czas który upłynął pomiędzy startem, a stopem ćwiczenia'''
+        """Clens start time for excersie
+
+        Returns:
+            time in second: return duration time of excersise
+        """
         timeOfStart = self.startTime        
         self.startTime = 0
         duration = time() - timeOfStart
@@ -37,7 +56,11 @@ class Exercise:
     __CORRECT_FRAMES = math.ceil(__FRAMES_PER_SECOND / 4)
 
     def __init__(self, name: str):
-        '''inicjalizacja klasy Excersise, przyjmująca nazwe ćwiczenia jako parametr'''
+        """Represent excersise 
+
+        Args:
+            name (str): name of excersise
+        """
         self._excersiseName = name
         self.__frameCounter = 0
         self.__lastFramesCorrectnessArray: list[int] = [0] * self.__CORRECT_FRAMES
@@ -52,7 +75,15 @@ class Exercise:
         
 
     def checkExcersise(self, landmarksFront = None, landmarksSide = None) -> bool:
-        '''metoda sprawdzająca poprawność wykonywanego ćwiczenia dla danej klatki, przyjmująca landmarki frontowe oraz boczne jako argumenty'''
+        """check one frame for correctness
+
+        Args:
+            landmarksFront (List[Condition], optional): list of front landmarks. Defaults to None.
+            landmarksSide (List[Condition], optional): list od side landmarks. Defaults to None.
+
+        Returns:
+            bool: flag for excersise being done correctly
+        """        
         state:State = self._states.get(self._currentStateName)
         
         if landmarksFront:
@@ -75,27 +106,51 @@ class Exercise:
         return True, self.__isCompletedState()
 
     def __isCompletedState(self):
-        '''metoda sprawdzająća czy stan cwiczenia jest ukonczony, czyści tablice poprawnosci'''
+        """checks if state of excersise is completed
+
+        Returns:
+            bool: flag for completion of step of excersise
+        """        
         if sum(self.__lastFramesCorrectnessArray) / len(self.__lastFramesCorrectnessArray) == 1:
             self.__lastFramesCorrectnessArray = [0] * self.__CORRECT_FRAMES
             return True
         return False
 
     def __setLastFrameValue(self, value:int):
-        '''Metoda ustawiająca poprawność ostatniej klatki ćwiczenia'''
+        """sets last frame value
+
+        Args:
+            value (int): value of last frame correctness
+        """        
         self.__lastFramesCorrectnessArray[self.__frameCounter] = value
         self.__frameCounter = (self.__frameCounter + 1) % self.__CORRECT_FRAMES
     
         
     def __calculateThreePointAngle(self,leftP, midP, rightP) -> int:
-        '''metoda zwracająća kąt pomiędzy trzema punktami w stopniach'''
+        """calculates angle of three points
+
+        Args:
+            leftP (_type_): left point coords
+            midP (_type_): mid point coords
+            rightP (_type_): right point coords
+
+        Returns:
+            int: angle of three points in degrees
+        """        
         dis = lambda p1, p2: math.sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2))                
         return int(math.degrees(math.acos((math.pow(dis(midP, leftP), 2) + math.pow(dis(midP, rightP), 2) - math.pow(dis(rightP, leftP), 2)) / (2 * dis(leftP, midP) * dis(rightP, midP)))))
 
     
     def setState(self, stateName: str | None = None):
-        '''metoda zmieniająca stan o nazwie przekazanej w argumencie stateName
-        lub na następny w kolejce w przypadku pominięcia argumeny'''
+        """sets state of excersise to next or to named like stateName arg
+
+        Args:
+            stateName (str | None, optional): next step name. Defaults to None.
+
+
+        Returns:
+            _type_: current step name + duration of previous step or current step name if we are trying to set the same step
+        """
         print(self._statesNames)
         print(self._stateIdx, self._maxStateIdx)
         
@@ -117,13 +172,17 @@ class Exercise:
         return self._currentStateName, (stateDuration - self.__CORRECT_FRAMES/self.__FRAMES_PER_SECOND)
     
     def getStateMessage(self):
-        '''metoda zwraca wiadomość przypisaną dla stanu 
-        np. "rozpocznij trening, [nazwa stanu]" do wyświetlenia na ekranie'''
+        """returns state messege
+
+        Returns:
+            str: state messege
+        """        
         return ((self._states.get(self._currentStateName)).messege)
     
     def getEndStats(self):
         #TODO Rozbudować
-        '''metoda zwracająca statystki dla każdego stanu'''
+        """return end stats of each excersise
+        """        
         for key, state in self._states.items():
             print(key, state.durationStats)
     

@@ -80,7 +80,6 @@ class TwoCameraFrameWindow(Screen):
                     
 
     def update_camera(self, cap, isSide:bool = False):
-
         ret, frame = cap.read()
         if ret:
             frame = cv2.flip(frame, 1)
