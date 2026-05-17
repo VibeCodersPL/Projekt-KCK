@@ -24,8 +24,8 @@ class TwoCameraFrameWindow(Screen):
         btn.bind(on_press=partial(self.change_screen, 'menu'))
         cameras_layout = BoxLayout(orientation = "horizontal", spacing=15, size_hint=(1,0.8))
         
-        self.camera_view = Image(size_hint=(1, 0.5), pos_hint={'center_x': 0.25, 'center_y': 0.5})
-        self.camera_view2 = Image(size_hint=(1, 0.5), pos_hint={'center_x': 0.25, 'center_y': 0.5})
+        self.camera_view = Image(size_hint=(1, 1), pos_hint={'center_x': 0.25, 'center_y': 0.5}, allow_stretch = True)
+        self.camera_view2 = Image(size_hint=(1, 1), pos_hint={'center_x': 0.25, 'center_y': 0.5},  allow_stretch = True)
         self.text_box = Label(size_hint = (None, None), size=(200,100), pos_hint={'right':1, 'top':1})
         cameras_layout.add_widget(self.camera_view)
         cameras_layout.add_widget(self.camera_view2)
