@@ -4,6 +4,7 @@ from time import time
 
 
 class Condition:
+    '''Klasa warunku ćwiczenia'''
     def __init__(self, landmarks: List[int] = [11,13,15], degree: int = 160, tolerance: int = 0.3):
         self.landmarks = landmarks # Lista 3 punktów, np. [11, 13, 15]
         self.degree = degree
@@ -11,6 +12,7 @@ class Condition:
 
 
 class State:
+    '''klasa stanu ćwiczenia'''
     def __init__(self, conditionFront:List[Condition] = [Condition()], conditionSide:List[Condition] = [Condition()], messege:str = "DEFAULT"):
         self.conditonFront = conditionFront
         self.conditonSide = conditionSide
@@ -19,9 +21,11 @@ class State:
         self.durationStats = []
         
     def start(self):
+        '''metoda zapisująca czas startu stanu ćwiczenia'''
         self.startTime = time()
         
     def stop(self):
+        '''metoda resetująca czas startu stanu ćwiczenia, zwracająca czas który upłynął pomiędzy startem, a stopem ćwiczenia'''
         timeOfStart = self.startTime        
         self.startTime = 0
         duration = time() - timeOfStart
@@ -33,6 +37,7 @@ class Exercise:
     __CORRECT_FRAMES = math.ceil(__FRAMES_PER_SECOND / 4)
 
     def __init__(self, name: str):
+        '''inicjalizacja klasy Excersise, przyjmująca nazwe ćwiczenia jako parametr'''
         self._excersiseName = name
         self.__frameCounter = 0
         self.__lastFramesCorrectnessArray: list[int] = [0] * self.__CORRECT_FRAMES
@@ -47,8 +52,8 @@ class Exercise:
         
 
     def checkExcersise(self, landmarksFront = None, landmarksSide = None) -> bool:
-    
-        state:State = self.__getState()
+        '''metoda sprawdzająca poprawność wykonywanego ćwiczenia dla danej klatki, przyjmująca landmarki frontowe oraz boczne jako argumenty'''
+        state:State = self._states.get(self._currentStateName)
         
         if landmarksFront:
             for cond in state.conditonFront:
@@ -70,26 +75,27 @@ class Exercise:
         return True, self.__isCompletedState()
 
     def __isCompletedState(self):
+        '''metoda sprawdzająća czy stan cwiczenia jest ukonczony, czyści tablice poprawnosci'''
         if sum(self.__lastFramesCorrectnessArray) / len(self.__lastFramesCorrectnessArray) == 1:
             self.__lastFramesCorrectnessArray = [0] * self.__CORRECT_FRAMES
             return True
         return False
 
     def __setLastFrameValue(self, value:int):
+        '''Metoda ustawiająca poprawność ostatniej klatki ćwiczenia'''
         self.__lastFramesCorrectnessArray[self.__frameCounter] = value
         self.__frameCounter = (self.__frameCounter + 1) % self.__CORRECT_FRAMES
     
-    def __getState(self) -> State:
-        return self._states.get(self._currentStateName)
         
     def __calculateThreePointAngle(self,leftP, midP, rightP) -> int:
-        '''returns angle in degrees'''
+        '''metoda zwracająća kąt pomiędzy trzema punktami w stopniach'''
         dis = lambda p1, p2: math.sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2))                
         return int(math.degrees(math.acos((math.pow(dis(midP, leftP), 2) + math.pow(dis(midP, rightP), 2) - math.pow(dis(rightP, leftP), 2)) / (2 * dis(leftP, midP) * dis(rightP, midP)))))
 
     
     def setState(self, stateName: str | None = None):
-        
+        '''metoda zmieniająca stan o nazwie przekazanej w argumencie stateName
+        lub na następny w kolejce w przypadku pominięcia argumeny'''
         print(self._statesNames)
         print(self._stateIdx, self._maxStateIdx)
         
@@ -111,9 +117,13 @@ class Exercise:
         return self._currentStateName, (stateDuration - self.__CORRECT_FRAMES/self.__FRAMES_PER_SECOND)
     
     def getStateMessage(self):
+        '''metoda zwraca wiadomość przypisaną dla stanu 
+        np. "rozpocznij trening, [nazwa stanu]" do wyświetlenia na ekranie'''
         return ((self._states.get(self._currentStateName)).messege)
     
     def getEndStats(self):
+        #TODO Rozbudować
+        '''metoda zwracająca statystki dla każdego stanu'''
         for key, state in self._states.items():
             print(key, state.durationStats)
     
