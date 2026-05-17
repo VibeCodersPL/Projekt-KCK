@@ -22,10 +22,10 @@ class WzorowyPokazScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         wid = Widget()
-        layout = BoxLayout(orientation='vertical', size_hint=(None, None), size=(350, 320), spacing=20)
+        layout = BoxLayout(orientation='vertical', size_hint=(None, None), size=(1000, 630), spacing=20)
         main_text = Label(
             text='Wzorowy Pokaz',
-            font_size='32sp',
+            font_size='50sp',
             bold=True,
             size_hint_y=None,
             height=50
@@ -37,17 +37,43 @@ class WzorowyPokazScreen(Screen):
             'Menu': 'menu'
         }
         self.menu_buttons = []
-        for mode in self.screen_mapping.keys():
-            button = RoundedButton(
-                text=mode,
-                font_size='26sp',
-                color=(1, 1, 1, 1),
-                bg_color=(0.15, 0.45, 0.85, 1),
-                radius=30
-            )
-            button.bind(on_press=self.change_screen)
-            layout.add_widget(button)
-            self.menu_buttons.append(button)
+        blocks_layout = BoxLayout(orientation='horizontal', size_hint=(1, 1), spacing=20)
+        btn_stojaca = RoundedButton(
+            text='Postawa Stojąca',
+            font_size='36sp',
+            color=(1, 1, 1, 1),
+            bg_color=(0.15, 0.45, 0.85, 1),
+            radius=30,
+            bg_image="../assets/Postawa1.png"
+        )
+        btn_stojaca.bind(on_press=self.change_screen)
+        blocks_layout.add_widget(btn_stojaca)
+        self.menu_buttons.append(btn_stojaca)
+
+        btn_kleczaca = RoundedButton(
+            text='Postawa klęcząca',
+            font_size='36sp',
+            color=(1, 1, 1, 1),
+            bg_color=(0.15, 0.45, 0.85, 1),
+            radius=30,
+            bg_image="../assets/Postawa2.png"
+        )
+        btn_kleczaca.bind(on_press=self.change_screen)
+        blocks_layout.add_widget(btn_kleczaca)
+        self.menu_buttons.append(btn_kleczaca)
+
+        layout.add_widget(blocks_layout)
+        btn_menu = RoundedButton(
+            text='Menu',
+            font_size='36sp',
+            color=(1, 1, 1, 1),
+            bg_color=(0.85, 0.15, 0.15, 1),
+            radius=30,
+            size_hint=(1, 0.3)
+        )
+        btn_menu.bind(on_press=self.change_screen)
+        layout.add_widget(btn_menu)
+        self.menu_buttons.append(btn_menu)
         root = AnchorLayout(anchor_x='center', anchor_y='center')
         root.add_widget(wid)
         root.add_widget(layout)
@@ -176,7 +202,6 @@ class WzorowyPokaz(App):
         sm.add_widget(WzorowyPokazScreen(name='WzorowyPokaz'))
         sm.add_widget(PostawaStojaca(name='PostawaStojaca'))
         sm.add_widget(PostawaKleczaca(name='PostawaKleczaca'))
-        sm.add_widget(Menu(name='menu'))
         return sm
 
 
