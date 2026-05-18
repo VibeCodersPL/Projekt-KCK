@@ -19,49 +19,37 @@ class TreningWspierany(TCFW):
         self.HOVER_THRESHOLD = 30 # ile czasu potrzba aby aktywować przyciski
         self.has_training_run = False  # Czy było start i potem stop (trening się zaczął i skończyć -> można go zapisać)
         self.is_training_saved = False  # Czy trening został już zapisany
+        self.is_pose_correct = False
 
     def update_frame(self, dt):
-        if not self.cap or not self.cap.isOpened() and not self.cap2 or not self.cap2.isOpened():
-            return
-
-        landmarksFront = None
-        landmarksSide = None
-
-        if self.cap.isOpened():
-            self.camera_view.texture, landmarksFront = self.update_camera(self.cap)
-
-        if self.cap2.isOpened():
-            self.camera_view2.texture, landmarksSide = self.update_camera(self.cap2, True)
+        super().update_frame(dt)
 
         if self.is_training_started:
-            if self.screenExcersise.checkExcersise(landmarksFront, landmarksSide):
-                pass  #TODO w jaki sposob sprawdzamy ćwiczenie????
-            msg = self.screenExcersise.getMessage()
-            self.text_box.text = msg
+            #tutaj zwraca tuple (bool, bool) <- (czy jest dobrze wykonywana ta klatka, czy skonczył etap ćwiczenia)
+            self.is_pose_correct, isStateEnded = self.screenExcersise.checkExcersise(self.landmarksFront, self.landmarksSide)
+            if self.is_pose_correct:
+                self.text_box.text = "DOBRZE!"
+                self.text_box.color = (0.2, 1, 0.2, 1)  # Jasnozielony
+            else:
+                self.text_box.text = "SKORYGUJ POSTAWE"
+                self.text_box.color = (1, 0.2, 0.2, 1)  # Czerwony
         else:
-            self.text_box.text = "Czekam na start..."
+            self.is_pose_correct = False
 
-    def update_camera(self, cap, isSide: bool = False):
-        ret, frame = cap.read()
-        if ret:
-            frame = cv2.flip(frame, 1)
+            if self.is_training_saved:
+                self.text_box.text = "TRENING ZAPISANY"
+                self.text_box.color = (0.2, 0.6, 1, 1)  # Niebieski
+            elif self.has_training_run:
+                self.text_box.text = "ZAKONCZONO - ZAPISZ TRENING"
+                self.text_box.color = (1, 0.8, 0, 1)  # Żółty
+            else:
+                self.text_box.text = "ROZPOCZNIJ CWICZENIE"
+                self.text_box.color = (1, 1, 1, 1)  # Biały
 
-            processed_frame, result = self.detector.process_frame(frame)
-            landmarks = self.detector.getLandmarks()
-
-            if not isSide:
-                processed_frame = self.handle_cv_interface(processed_frame)
-
-            buf = cv2.flip(processed_frame, 0).tobytes()
-            texture = Texture.create(
-                size=(processed_frame.shape[1], processed_frame.shape[0]),
-                colorfmt='bgr'
-            )
-            texture.blit_buffer(buf, colorfmt='bgr', bufferfmt='ubyte')
-
-            return texture, landmarks
-
-        return None, None
+    def process_cv_frame(self, frame, isSide: bool):
+        if not isSide:
+            return self.handle_cv_interface(frame)
+        return frame
 
     def handle_cv_interface(self, frame):
         h, w, _ = frame.shape
@@ -77,7 +65,6 @@ class TreningWspierany(TCFW):
         sv_y1 = s_y1
         sv_x2, sv_y2 = sv_x1 + btn_w, sv_y1 + btn_h
 
-        #sprawdzenie reakcji przycisku zapisz
         can_save = self.has_training_run and not self.is_training_started and not self.is_training_saved
 
         wrists = []
@@ -90,10 +77,8 @@ class TreningWspierany(TCFW):
         save_hovered = False
 
         for wx, wy in wrists:
-            # Kolizja ze Start/Stop
             if s_x1 <= wx <= s_x2 and s_y1 <= wy <= s_y2:
                 start_hovered = True
-            # Kolizja z Zapisz (aktywna tylko, gdy spełnione są warunki zapisu)
             if sv_x1 <= wx <= sv_x2 and sv_y1 <= wy <= sv_y2:
                 if can_save:
                     save_hovered = True
@@ -106,8 +91,8 @@ class TreningWspierany(TCFW):
                     self.toggle_start_stop()
                     self.hover_start_frames = -30
         else:
-            self.hover_start_frames = max(0, self.hover_start_frames - 2) \
-                if self.hover_start_frames > 0 else self.hover_start_frames
+            self.hover_start_frames = max(0,
+                                          self.hover_start_frames - 2) if self.hover_start_frames > 0 else self.hover_start_frames
 
         if self.hover_start_frames < 0:
             self.hover_start_frames += 1
@@ -129,7 +114,8 @@ class TreningWspierany(TCFW):
         font = cv2.FONT_HERSHEY_SIMPLEX
         font_scale = w / 1200.0
         thickness = 1
-        # przycisk start-stop
+
+        # Przycisk start-stop
         bg_start = (0, 0, 200) if self.is_training_started else (0, 180, 0)
         cv2.rectangle(frame, (s_x1, s_y1), (s_x2, s_y2), bg_start, -1)
 
@@ -146,13 +132,13 @@ class TreningWspierany(TCFW):
 
         # Przycisk zapisz
         if self.is_training_saved:
-            bg_save = (150, 0, 0)  # ciemno niebieski - potwierdzenie zapisu
+            bg_save = (150, 0, 0)
             text_save = "ZAPISANO"
         elif can_save:
-            bg_save = (200, 100, 0)  # Niebieski -
+            bg_save = (200, 100, 0)
             text_save = "ZAPISZ"
         else:
-            bg_save = (100, 100, 100)  # Szary - zablokowany
+            bg_save = (100, 100, 100)
             text_save = "ZAPISZ"
 
         cv2.rectangle(frame, (sv_x1, sv_y1), (sv_x2, sv_y2), bg_save, -1)
@@ -173,20 +159,15 @@ class TreningWspierany(TCFW):
 
         if self.is_training_started:
             print("Trening ROZPOCZĘTY")
-            # Kiedy startujemy nowy trening, resetujemy flagi zapisu
             self.has_training_run = False
             self.is_training_saved = False
         else:
             print("Trening ZATRZYMANY")
-            # Kiedy zatrzymujemy, ustawiamy, że trening się odbył i można go zapisać
             self.has_training_run = True
-
-        # TODO logika do startu stopu przycisku
 
     def save_training(self):
         print("Trening ZAPISANY!")
-        self.is_training_saved = True  # Zablokowanie przycisku
-        # TODO logika zapisu treningu
+        self.is_training_saved = True
 
     def change_screen(self, target_screen, instance):
         if target_screen == 'menu':
