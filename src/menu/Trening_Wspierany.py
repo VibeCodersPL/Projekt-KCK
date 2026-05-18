@@ -22,21 +22,11 @@ class TreningWspierany(TCFW):
         self.is_pose_correct = False
 
     def update_frame(self, dt):
-        if not self.cap or not self.cap.isOpened() and not self.cap2 or not self.cap2.isOpened():
-            return
-
-        landmarksFront = None
-        landmarksSide = None
-
-        if self.cap.isOpened():
-            self.camera_view.texture, landmarksFront = self.update_camera(self.cap)
-
-        if self.cap2.isOpened():
-            self.camera_view2.texture, landmarksSide = self.update_camera(self.cap2, True)
+        super().update_frame(dt)
 
         if self.is_training_started:
-            self.is_pose_correct = self.screenExcersise.checkExcersise(landmarksFront, landmarksSide)
-
+            #tutaj zwraca tuple (bool, bool) <- (czy jest dobrze wykonywana ta klatka, czy skonczył etap ćwiczenia)
+            self.is_pose_correct, isStateEnded = self.screenExcersise.checkExcersise(self.landmarksFront, self.landmarksSide)
             if self.is_pose_correct:
                 self.text_box.text = "DOBRZE!"
                 self.text_box.color = (0.2, 1, 0.2, 1)  # Jasnozielony

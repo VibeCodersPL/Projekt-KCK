@@ -15,9 +15,10 @@ class TwoCameraFrameWindow(Screen):
     screenExcersise: Ex.Exercise = None
 
     def __init__(self, **kwargs):
-    
+                
         super().__init__(**kwargs)
-        
+        self.landmarksFront = None
+        self.landmarksFront = None
         #TODO to jest do poukładania
         btn = Button(text="Powrot do Menu",size_hint=(None,None), size=(200, 50))
         btn.bind(on_press=partial(self.change_screen, 'menu'))
@@ -68,20 +69,11 @@ class TwoCameraFrameWindow(Screen):
                 return
 
             if(self.cap.isOpened()):
-                self.camera_view.texture, landmarksFront = self.update_camera(self.cap)
+                self.camera_view.texture, self.landmarksFront = self.update_camera(self.cap)
                 
             if(self.cap2.isOpened()):
-                self.camera_view2.texture, landmarksSide = self.update_camera(self.cap2, True)
+                self.camera_view2.texture, self.landmarksSide = self.update_camera(self.cap2, True)
             
-            
-            if self.screenExcersise.checkExcersise(landmarksFront,landmarksSide) == (True,True):
-                print(self.screenExcersise.setState())
-                print("ukonczono cwiczenie")
-            else:
-                print("niepoprawnie wykonane")
-            
-            msg = self.screenExcersise.getStateMessage()
-            self.text_box.text = msg
                 
     def update_camera(self, cap, isSide:bool = False):
         ret, frame = cap.read()

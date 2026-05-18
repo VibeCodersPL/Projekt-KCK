@@ -71,7 +71,7 @@ class Exercise:
         self._states["DEFAULT"] = State()
         self._maxStateIdx = len(self._states)
 
-    def checkExcersise(self, landmarksFront = None, landmarksSide = None) -> bool:
+    def checkExcersise(self, landmarksFront = None, landmarksSide = None):
         """check one frame for correctness
 
         Args:
@@ -88,7 +88,7 @@ class Exercise:
                 angle = self.__calculateThreePointAngle(landmarksFront[cond.landmarks[0]], landmarksFront[cond.landmarks[1]], landmarksFront[cond.landmarks[2]])
                 if abs(angle - cond.degree) - (cond.degree * cond.tolerance) > 0:
                     self.__setLastFrameValue(0)
-                    return False
+                    return False, False
         
                 
         if landmarksSide:
@@ -96,10 +96,9 @@ class Exercise:
                 angle = self.__calculateThreePointAngle(landmarksSide[cond.landmarks[0]], landmarksSide[cond.landmarks[1]], landmarksSide[cond.landmarks[2]])
                 if abs(angle - cond.degree) - (cond.degree * cond.tolerance) > 0:
                     self.__setLastFrameValue(0)
-                    return False
+                    return False, False
         
         self.__setLastFrameValue(1)
-                             
         return True, self.__isCompletedState()
 
     def __isCompletedState(self):
@@ -109,7 +108,6 @@ class Exercise:
             bool: flag for completion of step of excersise
         """        
         if sum(self.__lastFramesCorrectnessArray) / len(self.__lastFramesCorrectnessArray) == 1:
-            self.__lastFramesCorrectnessArray = [0] * self.__CORRECT_FRAMES
             return True
         return False
 
@@ -154,6 +152,7 @@ class Exercise:
             return self._currentStateName
         
         stateDuration = self._states[self._currentStateName].stop()
+        self.__lastFramesCorrectnessArray = [0] * self.__CORRECT_FRAMES
 
         if stateName is None:
             self._stateIdx = (self._stateIdx + 1) % self._maxStateIdx
@@ -165,6 +164,7 @@ class Exercise:
             else:
                 raise ValueError(f"Stan {stateName} nie istnieje!")
         
+    
         return self._currentStateName, (stateDuration - self.__CORRECT_FRAMES/self.__FRAMES_PER_SECOND)
     
     def getStateMessage(self):
