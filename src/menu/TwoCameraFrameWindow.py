@@ -12,7 +12,6 @@ import detection.excersises as Ex
 
 class TwoCameraFrameWindow(Screen):
     
-    corExcCtr = 0
     screenExcersise: Ex.Exercise = None
 
     def __init__(self, **kwargs):
@@ -74,13 +73,14 @@ class TwoCameraFrameWindow(Screen):
             if(self.cap2.isOpened()):
                 self.camera_view2.texture, landmarksSide = self.update_camera(self.cap2, True)
             
-            if self.screenExcersise.checkExcersise(landmarksFront,landmarksSide):
-                print("poprawnie wykonane")
+            
+            if self.screenExcersise.checkExcersise(landmarksFront,landmarksSide) == (True,True):
+                print(self.screenExcersise.setState())
+                print("ukonczono cwiczenie")
             else:
                 print("niepoprawnie wykonane")
             
-            msg = self.screenExcersise.getMessage()
-            print(msg)
+            msg = self.screenExcersise.getStateMessage()
             self.text_box.text = msg
                 
     def update_camera(self, cap, isSide:bool = False):
