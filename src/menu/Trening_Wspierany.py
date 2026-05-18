@@ -34,7 +34,6 @@ class TreningWspierany(TCFW):
         if self.cap2.isOpened():
             self.camera_view2.texture, landmarksSide = self.update_camera(self.cap2, True)
 
-        # --- ZARZĄDZANIE TEKSTEM I KOLORAMI W KIVY ---
         if self.is_training_started:
             self.is_pose_correct = self.screenExcersise.checkExcersise(landmarksFront, landmarksSide)
 
@@ -193,12 +192,9 @@ class TreningWspierany(TCFW):
             print("Trening ZATRZYMANY")
             self.has_training_run = True
 
-        # TODO logika do startu stopu przycisku
-
     def save_training(self):
         print("Trening ZAPISANY!")
         self.is_training_saved = True
-        # TODO logika zapisu treningu
 
     def change_screen(self, target_screen, instance):
         if target_screen == 'menu':
