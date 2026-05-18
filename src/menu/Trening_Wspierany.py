@@ -34,14 +34,28 @@ class TreningWspierany(TCFW):
         if self.cap2.isOpened():
             self.camera_view2.texture, landmarksSide = self.update_camera(self.cap2, True)
 
+        # --- ZARZĄDZANIE TEKSTEM I KOLORAMI W KIVY ---
         if self.is_training_started:
             self.is_pose_correct = self.screenExcersise.checkExcersise(landmarksFront, landmarksSide)
 
-            msg = self.screenExcersise.getMessage()
-            #self.text_box.text = msg
+            if self.is_pose_correct:
+                self.text_box.text = "DOBRZE!"
+                self.text_box.color = (0.2, 1, 0.2, 1)  # Jasnozielony
+            else:
+                self.text_box.text = "SKORYGUJ POSTAWE"
+                self.text_box.color = (1, 0.2, 0.2, 1)  # Czerwony
         else:
             self.is_pose_correct = False
-           # self.text_box.text = "Czekam na start..."
+
+            if self.is_training_saved:
+                self.text_box.text = "TRENING ZAPISANY"
+                self.text_box.color = (0.2, 0.6, 1, 1)  # Niebieski
+            elif self.has_training_run:
+                self.text_box.text = "ZAKONCZONO - ZAPISZ TRENING"
+                self.text_box.color = (1, 0.8, 0, 1)  # Żółty
+            else:
+                self.text_box.text = "ROZPOCZNIJ CWICZENIE"
+                self.text_box.color = (1, 1, 1, 1)  # Biały
 
     def update_camera(self, cap, isSide: bool = False):
         ret, frame = cap.read()
@@ -79,7 +93,6 @@ class TreningWspierany(TCFW):
         sv_y1 = s_y1
         sv_x2, sv_y2 = sv_x1 + btn_w, sv_y1 + btn_h
 
-        #sprawdzenie reakcji przycisku zapisz
         can_save = self.has_training_run and not self.is_training_started and not self.is_training_saved
 
         wrists = []
@@ -92,10 +105,8 @@ class TreningWspierany(TCFW):
         save_hovered = False
 
         for wx, wy in wrists:
-            # Kolizja ze Start/Stop
             if s_x1 <= wx <= s_x2 and s_y1 <= wy <= s_y2:
                 start_hovered = True
-            # Kolizja z Zapisz (aktywna tylko, gdy spełnione są warunki zapisu)
             if sv_x1 <= wx <= sv_x2 and sv_y1 <= wy <= sv_y2:
                 if can_save:
                     save_hovered = True
@@ -108,8 +119,8 @@ class TreningWspierany(TCFW):
                     self.toggle_start_stop()
                     self.hover_start_frames = -30
         else:
-            self.hover_start_frames = max(0, self.hover_start_frames - 2) \
-                if self.hover_start_frames > 0 else self.hover_start_frames
+            self.hover_start_frames = max(0,
+                                          self.hover_start_frames - 2) if self.hover_start_frames > 0 else self.hover_start_frames
 
         if self.hover_start_frames < 0:
             self.hover_start_frames += 1
@@ -132,27 +143,7 @@ class TreningWspierany(TCFW):
         font_scale = w / 1200.0
         thickness = 1
 
-        if self.is_training_started:
-            if self.is_pose_correct:
-                status_text = "DOBRZE!"
-                status_color = (0, 255, 0)  # Zielony (BGR)
-            else:
-                status_text = "SKORYGUJ POSTAWE"
-                status_color = (0, 0, 255)  # Czerwony (BGR)
-
-            big_font_scale = font_scale * 1.5
-            big_thickness = thickness + 1
-
-            (st_w, st_h), _ = cv2.getTextSize(status_text, font, big_font_scale, big_thickness)
-            st_x = (w - st_w) // 2
-            st_y = int(h * 0.1)
-
-            cv2.putText(frame, status_text, (st_x, st_y), font, big_font_scale, (0, 0, 0),
-                        big_thickness + 2)
-            cv2.putText(frame, status_text, (st_x, st_y), font, big_font_scale, status_color,
-                        big_thickness)
-
-        # przycisk start-stop
+        # Przycisk start-stop
         bg_start = (0, 0, 200) if self.is_training_started else (0, 180, 0)
         cv2.rectangle(frame, (s_x1, s_y1), (s_x2, s_y2), bg_start, -1)
 
@@ -169,13 +160,13 @@ class TreningWspierany(TCFW):
 
         # Przycisk zapisz
         if self.is_training_saved:
-            bg_save = (150, 0, 0)  # ciemno niebieski - potwierdzenie zapisu
+            bg_save = (150, 0, 0)
             text_save = "ZAPISANO"
         elif can_save:
-            bg_save = (200, 100, 0)  # Niebieski -
+            bg_save = (200, 100, 0)
             text_save = "ZAPISZ"
         else:
-            bg_save = (100, 100, 100)  # Szary - zablokowany
+            bg_save = (100, 100, 100)
             text_save = "ZAPISZ"
 
         cv2.rectangle(frame, (sv_x1, sv_y1), (sv_x2, sv_y2), bg_save, -1)
@@ -206,7 +197,7 @@ class TreningWspierany(TCFW):
 
     def save_training(self):
         print("Trening ZAPISANY!")
-        self.is_training_saved = True  
+        self.is_training_saved = True
         # TODO logika zapisu treningu
 
     def change_screen(self, target_screen, instance):
