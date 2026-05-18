@@ -56,27 +56,10 @@ class TreningWspierany(TCFW):
                 self.text_box.text = "ROZPOCZNIJ CWICZENIE"
                 self.text_box.color = (1, 1, 1, 1)  # Biały
 
-    def update_camera(self, cap, isSide: bool = False):
-        ret, frame = cap.read()
-        if ret:
-            frame = cv2.flip(frame, 1)
-
-            processed_frame, result = self.detector.process_frame(frame)
-            landmarks = self.detector.getLandmarks()
-
-            if not isSide:
-                processed_frame = self.handle_cv_interface(processed_frame)
-
-            buf = cv2.flip(processed_frame, 0).tobytes()
-            texture = Texture.create(
-                size=(processed_frame.shape[1], processed_frame.shape[0]),
-                colorfmt='bgr'
-            )
-            texture.blit_buffer(buf, colorfmt='bgr', bufferfmt='ubyte')
-
-            return texture, landmarks
-
-        return None, None
+    def process_cv_frame(self, frame, isSide: bool):
+        if not isSide:
+            return self.handle_cv_interface(frame)
+        return frame
 
     def handle_cv_interface(self, frame):
         h, w, _ = frame.shape

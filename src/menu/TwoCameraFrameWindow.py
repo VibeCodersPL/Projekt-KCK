@@ -83,18 +83,15 @@ class TwoCameraFrameWindow(Screen):
             print(msg)
             self.text_box.text = msg
                 
-            
-                    
-                    
-
     def update_camera(self, cap, isSide:bool = False):
-
         ret, frame = cap.read()
         if ret:
             frame = cv2.flip(frame, 1)
 
             processed_frame, result = self.detector.process_frame(frame)
             landmarks = self.detector.getLandmarks()
+
+            processed_frame = self.process_cv_frame(processed_frame, isSide)
 
             buf = cv2.flip(processed_frame, 0).tobytes()
 
@@ -106,6 +103,9 @@ class TwoCameraFrameWindow(Screen):
             texture.blit_buffer(buf, colorfmt='bgr', bufferfmt='ubyte')
 
             return texture, landmarks
+
+    def process_cv_frame(self, frame, isSide: bool):
+        return frame
 
     def on_leave(self):
         """Uruchamiane przy wychodzeniu - zwalnianie zasobów"""
