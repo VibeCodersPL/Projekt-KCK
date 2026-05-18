@@ -4,7 +4,6 @@ from time import time
 
 
 class Condition:
-    '''Klasa warunku ćwiczenia'''
     def __init__(self, landmarks: List[int] = [11,13,15], degree: int = 160, tolerance: int = 0.3):
         """Representation of one condition of excersise 
 
@@ -13,7 +12,7 @@ class Condition:
             degree (int, optional): angle between points. Defaults to 160.
             tolerance (int, optional): tolerance of angle. Defaults to 0.3.
         """         
-        self.landmarks = landmarks # Lista 3 punktów, np. [11, 13, 15]
+        self.landmarks = landmarks
         self.degree = degree
         self.tolerance = tolerance    
 
@@ -71,8 +70,6 @@ class Exercise:
         self._timeOfStateStart = time()
         self._states["DEFAULT"] = State()
         self._maxStateIdx = len(self._states)
-        
-        
 
     def checkExcersise(self, landmarksFront = None, landmarksSide = None) -> bool:
         """check one frame for correctness
@@ -125,7 +122,6 @@ class Exercise:
         self.__lastFramesCorrectnessArray[self.__frameCounter] = value
         self.__frameCounter = (self.__frameCounter + 1) % self.__CORRECT_FRAMES
     
-        
     def __calculateThreePointAngle(self,leftP, midP, rightP) -> int:
         """calculates angle of three points
 
