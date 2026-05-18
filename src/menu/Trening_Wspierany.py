@@ -19,6 +19,7 @@ class TreningWspierany(TCFW):
         self.HOVER_THRESHOLD = 30 # ile czasu potrzba aby aktywować przyciski
         self.has_training_run = False  # Czy było start i potem stop (trening się zaczął i skończyć -> można go zapisać)
         self.is_training_saved = False  # Czy trening został już zapisany
+        self.is_pose_correct = False
 
     def update_frame(self, dt):
         if not self.cap or not self.cap.isOpened() and not self.cap2 or not self.cap2.isOpened():
@@ -34,12 +35,13 @@ class TreningWspierany(TCFW):
             self.camera_view2.texture, landmarksSide = self.update_camera(self.cap2, True)
 
         if self.is_training_started:
-            if self.screenExcersise.checkExcersise(landmarksFront, landmarksSide):
-                pass  #TODO w jaki sposob sprawdzamy ćwiczenie????
+            self.is_pose_correct = self.screenExcersise.checkExcersise(landmarksFront, landmarksSide)
+
             msg = self.screenExcersise.getMessage()
-            self.text_box.text = msg
+            #self.text_box.text = msg
         else:
-            self.text_box.text = "Czekam na start..."
+            self.is_pose_correct = False
+           # self.text_box.text = "Czekam na start..."
 
     def update_camera(self, cap, isSide: bool = False):
         ret, frame = cap.read()
@@ -129,6 +131,27 @@ class TreningWspierany(TCFW):
         font = cv2.FONT_HERSHEY_SIMPLEX
         font_scale = w / 1200.0
         thickness = 1
+
+        if self.is_training_started:
+            if self.is_pose_correct:
+                status_text = "DOBRZE!"
+                status_color = (0, 255, 0)  # Zielony (BGR)
+            else:
+                status_text = "SKORYGUJ POSTAWE"
+                status_color = (0, 0, 255)  # Czerwony (BGR)
+
+            big_font_scale = font_scale * 1.5
+            big_thickness = thickness + 1
+
+            (st_w, st_h), _ = cv2.getTextSize(status_text, font, big_font_scale, big_thickness)
+            st_x = (w - st_w) // 2
+            st_y = int(h * 0.1)
+
+            cv2.putText(frame, status_text, (st_x, st_y), font, big_font_scale, (0, 0, 0),
+                        big_thickness + 2)
+            cv2.putText(frame, status_text, (st_x, st_y), font, big_font_scale, status_color,
+                        big_thickness)
+
         # przycisk start-stop
         bg_start = (0, 0, 200) if self.is_training_started else (0, 180, 0)
         cv2.rectangle(frame, (s_x1, s_y1), (s_x2, s_y2), bg_start, -1)
@@ -173,19 +196,17 @@ class TreningWspierany(TCFW):
 
         if self.is_training_started:
             print("Trening ROZPOCZĘTY")
-            # Kiedy startujemy nowy trening, resetujemy flagi zapisu
             self.has_training_run = False
             self.is_training_saved = False
         else:
             print("Trening ZATRZYMANY")
-            # Kiedy zatrzymujemy, ustawiamy, że trening się odbył i można go zapisać
             self.has_training_run = True
 
         # TODO logika do startu stopu przycisku
 
     def save_training(self):
         print("Trening ZAPISANY!")
-        self.is_training_saved = True  # Zablokowanie przycisku
+        self.is_training_saved = True  
         # TODO logika zapisu treningu
 
     def change_screen(self, target_screen, instance):
