@@ -50,6 +50,16 @@ class TwoCameraFrameWindow(Screen):
         self.main_layout.add_widget(self.ui_layer)
         self.add_widget(self.main_layout)
 
+    def add_ui_element(self, widget):
+        self.ui_layer.add_widget(widget)
+
+    def remove_ui_element(self, widget):
+        self.ui_layer.remove_widget(widget)
+
+    def set_title_text(self, text, color=(1, 1, 1, 1)):
+        self.text_box.text = text
+        self.text_box.color = color
+
     def change_screen(self, target_screen, instance):
         self.manager.current = target_screen
 
