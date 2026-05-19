@@ -11,11 +11,11 @@ import detection.excersises as Ex
 
 
 class TwoCameraFrameWindow(Screen):
-    
+
     screenExcersise: Ex.Exercise = None
 
     def __init__(self, **kwargs):
-                
+
         super().__init__(**kwargs)
         self.landmarksFront = None
         self.landmarksFront = None
@@ -41,8 +41,18 @@ class TwoCameraFrameWindow(Screen):
         self.add_widget(btn)
         self.add_widget(cameras_layout)
         self.add_widget(self.text_box)
-        
-        
+
+    def add_ui_element(self, widget):
+        self.ui_layer.add_widget(widget)
+
+    def remove_ui_element(self, widget):
+        self.ui_layer.remove_widget(widget)
+
+    def set_title_text(self, text, color=(1, 1, 1, 1)):
+        self.text_box.text = text
+        self.text_box.color = color
+
+
     def change_screen(self, target_screen, instance):
         self.manager.current = target_screen
         

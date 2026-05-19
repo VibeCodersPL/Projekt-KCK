@@ -24,7 +24,7 @@ if src_path not in sys.path:
 from Trening_Wspierany import *
 from Wzorowy_Pokaz import *
 from Trening_Jednego_Elementu import *
-from RoundedButton import *
+from src.layout_api.components.RoundedButton import *
 from detection.base_detection import *
 
 class MenuScreen(Screen):

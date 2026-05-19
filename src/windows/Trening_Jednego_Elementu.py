@@ -1,5 +1,5 @@
 import detection.excersises as ex
-from TwoCameraFrameWindow import TwoCameraFrameWindow as TCFW
+from src.layout_api.TwoCameraFrameWindow import TwoCameraFrameWindow as TCFW
 
 
 class Trening_Jednego_Elementu(TCFW):

@@ -5,8 +5,8 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.popup import Popup
 import cv2
-from TwoCameraFrameWindow import TwoCameraFrameWindow as TCFW
-from RoundedButton import *
+from src.layout_api.TwoCameraFrameWindow import TwoCameraFrameWindow as TCFW
+from src.layout_api.components.RoundedButton import *
 
 class TreningWspierany(TCFW):
     def __init__(self, **kwargs):
