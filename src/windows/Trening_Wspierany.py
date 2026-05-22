@@ -14,9 +14,6 @@ class TreningWspierany(TCFW):
         self.screenExcersise = ex.LowReady()
 
         self.is_training_started = False # Czy trening już się zaczął
-        self.hover_start_frames = 0 # licznik "czasu" jaki musi minąć aby uruchomić przycisk start/stop
-        self.hover_save_frames = 0 # licznik "czasu" dla przycisku zapisz
-        self.HOVER_THRESHOLD = 30 # ile czasu potrzba aby aktywować przyciski
         self.has_training_run = False  # Czy było start i potem stop (trening się zaczął i skończyć -> można go zapisać)
         self.is_training_saved = False  # Czy trening został już zapisany
         self.is_pose_correct = False
@@ -46,113 +43,15 @@ class TreningWspierany(TCFW):
                 self.text_box.text = "ROZPOCZNIJ CWICZENIE"
                 self.text_box.color = (1, 1, 1, 1)  # Biały
 
-    def process_cv_frame(self, frame, isSide: bool):
-        if not isSide:
-            return self.handle_cv_interface(frame)
-        return frame
+    def on_base_start_click(self):
+        """Metoda z klasy bazowej"""
+        self.toggle_start_stop()
 
-    def handle_cv_interface(self, frame):
-        h, w, _ = frame.shape
-
-        btn_w, btn_h = int(w * 0.20), int(h * 0.12)
-
-        # Przycisk start/stop
-        s_x1, s_y1 = int(w * 0.05), int(h * 0.15)
-        s_x2, s_y2 = s_x1 + btn_w, s_y1 + btn_h
-
-        # Przycisk zapisz
-        sv_x1 = w - btn_w - int(w * 0.05)
-        sv_y1 = s_y1
-        sv_x2, sv_y2 = sv_x1 + btn_w, sv_y1 + btn_h
-
+    def on_base_right_click(self):
+        """Metodaz klasy bazowej"""
         can_save = self.has_training_run and not self.is_training_started and not self.is_training_saved
-
-        wrists = []
-        for idx in [15, 16]:
-            lm = self.detector.getLandmarkCords(idx)
-            if lm:
-                wrists.append((int(lm[0] * w), int(lm[1] * h)))
-
-        start_hovered = False
-        save_hovered = False
-
-        for wx, wy in wrists:
-            if s_x1 <= wx <= s_x2 and s_y1 <= wy <= s_y2:
-                start_hovered = True
-            if sv_x1 <= wx <= sv_x2 and sv_y1 <= wy <= sv_y2:
-                if can_save:
-                    save_hovered = True
-
-        # Logika hover dla Start/Stop
-        if start_hovered:
-            if self.hover_start_frames >= 0:
-                self.hover_start_frames += 1
-                if self.hover_start_frames >= self.HOVER_THRESHOLD:
-                    self.toggle_start_stop()
-                    self.hover_start_frames = -30
-        else:
-            self.hover_start_frames = max(0,
-                                          self.hover_start_frames - 2) if self.hover_start_frames > 0 else self.hover_start_frames
-
-        if self.hover_start_frames < 0:
-            self.hover_start_frames += 1
-
-        # Logika hover dla Zapisz
-        if save_hovered:
-            if self.hover_save_frames >= 0:
-                self.hover_save_frames += 1
-                if self.hover_save_frames >= self.HOVER_THRESHOLD:
-                    self.save_training()
-                    self.hover_save_frames = -30
-        else:
-            self.hover_save_frames = max(0,
-                                         self.hover_save_frames - 2) if self.hover_save_frames > 0 else self.hover_save_frames
-
-        if self.hover_save_frames < 0:
-            self.hover_save_frames += 1
-
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        font_scale = w / 1200.0
-        thickness = 1
-
-        # Przycisk start-stop
-        bg_start = (0, 0, 200) if self.is_training_started else (0, 180, 0)
-        cv2.rectangle(frame, (s_x1, s_y1), (s_x2, s_y2), bg_start, -1)
-
-        if self.hover_start_frames > 0:
-            fill_w = int((self.hover_start_frames / self.HOVER_THRESHOLD) * btn_w)
-            cv2.rectangle(frame, (s_x1, s_y1), (s_x1 + fill_w, s_y2), (0, 255, 255), -1)
-
-        text_start = "STOP" if self.is_training_started else "START"
-
-        (t_w, t_h), _ = cv2.getTextSize(text_start, font, font_scale, thickness)
-        t_x = s_x1 + (btn_w - t_w) // 2
-        t_y = s_y1 + (btn_h + t_h) // 2
-        cv2.putText(frame, text_start, (t_x, t_y), font, font_scale, (255, 255, 255), thickness)
-
-        # Przycisk zapisz
-        if self.is_training_saved:
-            bg_save = (150, 0, 0)
-            text_save = "ZAPISANO"
-        elif can_save:
-            bg_save = (200, 100, 0)
-            text_save = "ZAPISZ"
-        else:
-            bg_save = (100, 100, 100)
-            text_save = "ZAPISZ"
-
-        cv2.rectangle(frame, (sv_x1, sv_y1), (sv_x2, sv_y2), bg_save, -1)
-
-        if self.hover_save_frames > 0 and can_save:
-            fill_w = int((self.hover_save_frames / self.HOVER_THRESHOLD) * btn_w)
-            cv2.rectangle(frame, (sv_x1, sv_y1), (sv_x1 + fill_w, sv_y2), (0, 255, 255), -1)
-
-        (t_w, t_h), _ = cv2.getTextSize(text_save, font, font_scale, thickness)
-        t_x = sv_x1 + (btn_w - t_w) // 2
-        t_y = sv_y1 + (btn_h + t_h) // 2
-        cv2.putText(frame, text_save, (t_x, t_y), font, font_scale, (255, 255, 255), thickness)
-
-        return frame
+        if can_save:
+            self.save_training()
 
     def toggle_start_stop(self):
         self.is_training_started = not self.is_training_started
@@ -161,13 +60,19 @@ class TreningWspierany(TCFW):
             print("Trening ROZPOCZĘTY")
             self.has_training_run = False
             self.is_training_saved = False
+            self.btn_start.text = "STOP"
+            self.btn_start.bg_color = (0.8, 0, 0, 1)
         else:
             print("Trening ZATRZYMANY")
             self.has_training_run = True
+            self.btn_start.text = "START"
+            self.btn_start.bg_color = (0, 0.7, 0, 1)
 
     def save_training(self):
         print("Trening ZAPISANY!")
         self.is_training_saved = True
+        self.btn_save.text = "ZAPISANO"
+        self.btn_save.bg_color = (0.6, 0, 0, 1)
 
     def change_screen(self, target_screen, instance):
         if target_screen == 'menu':
