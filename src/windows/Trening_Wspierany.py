@@ -13,9 +13,6 @@ class TreningWspierany(TCFW):
         super().__init__(**kwargs)
         self.screenExcersise = ex.LowReady()
 
-        self.is_training_started = False # Czy trening już się zaczął
-        self.has_training_run = False  # Czy było start i potem stop (trening się zaczął i skończyć -> można go zapisać)
-        self.is_training_saved = False  # Czy trening został już zapisany
         self.is_pose_correct = False
 
     def update_frame(self, dt):
@@ -42,37 +39,6 @@ class TreningWspierany(TCFW):
             else:
                 self.text_box.text = "ROZPOCZNIJ CWICZENIE"
                 self.text_box.color = (1, 1, 1, 1)  # Biały
-
-    def on_base_start_click(self):
-        """Metoda z klasy bazowej"""
-        self.toggle_start_stop()
-
-    def on_base_right_click(self):
-        """Metodaz klasy bazowej"""
-        can_save = self.has_training_run and not self.is_training_started and not self.is_training_saved
-        if can_save:
-            self.save_training()
-
-    def toggle_start_stop(self):
-        self.is_training_started = not self.is_training_started
-
-        if self.is_training_started:
-            print("Trening ROZPOCZĘTY")
-            self.has_training_run = False
-            self.is_training_saved = False
-            self.btn_start.text = "STOP"
-            self.btn_start.bg_color = (0.8, 0, 0, 1)
-        else:
-            print("Trening ZATRZYMANY")
-            self.has_training_run = True
-            self.btn_start.text = "START"
-            self.btn_start.bg_color = (0, 0.7, 0, 1)
-
-    def save_training(self):
-        print("Trening ZAPISANY!")
-        self.is_training_saved = True
-        self.btn_save.text = "ZAPISANO"
-        self.btn_save.bg_color = (0.6, 0, 0, 1)
 
     def change_screen(self, target_screen, instance):
         if target_screen == 'menu':

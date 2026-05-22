@@ -26,6 +26,10 @@ class TwoCameraFrameWindow(Screen):
         self.hover_rest_frames = 0
         self.HOVER_THRESHOLD = 30
 
+        self.is_training_started = False  # Czy trening już się zaczął
+        self.has_training_run = False  # Czy było start i potem stop (trening się zaczął i skończyć -> można go zapisać)
+        self.is_training_saved = False  # Czy trening został już zapisany
+
         self.main_layout = FloatLayout()
 
         self.cameras_layout = BoxLayout(orientation="horizontal", spacing=15, size_hint=(1, 0.8),
@@ -66,11 +70,11 @@ class TwoCameraFrameWindow(Screen):
             font_size='24sp',
             bg_color=(0, 0.7, 0, 1),
             radius=10,
-            size_hint=(0.15, 0.1),
-            pos_hint={'x': 0.02, 'y': 0.6}
+            size_hint=(0.1, 0.07),
+            pos_hint={'x': 0.02, 'y': 0.65}
         )
         with self.btn_start.canvas.after:
-            Color(0, 1, 0, 0.5)
+            self.start_color = Color(0, 1, 0, 0)
             self.start_rect = RoundedRectangle(pos=self.btn_start.pos, size=(0, 0), radius=[10])
 
         self.btn_save = RoundedButton(
@@ -78,11 +82,11 @@ class TwoCameraFrameWindow(Screen):
             font_size='24sp',
             bg_color=(0.4, 0.4, 0.4, 1),
             radius=10,
-            size_hint=(0.15, 0.1),
-            pos_hint={'right': 0.98, 'y': 0.6}
+            size_hint=(0.1, 0.07),
+            pos_hint={'x': 0.38, 'y': 0.65}
         )
         with self.btn_save.canvas.after:
-            Color(0, 1, 0, 0.5)
+            self.save_color = Color(0, 1, 0, 0)
             self.save_rect = RoundedRectangle(pos=self.btn_save.pos, size=(0, 0), radius=[10])
 
         self.add_ui_element(self.btn_start)
@@ -107,13 +111,15 @@ class TwoCameraFrameWindow(Screen):
         # Margines Błędu
         MARGIN = 60
 
+        can_save = self.has_training_run and not self.is_training_started and not self.is_training_saved
+
         for x, y in wrists:
             if hasattr(self, 'btn_start'):
                 b = self.btn_start
                 if (b.x - MARGIN <= x <= b.right + MARGIN) and (b.y - MARGIN <= y <= b.top + MARGIN):
                     start_hovered = True
 
-            if hasattr(self, 'btn_save'):
+            if hasattr(self, 'btn_save') and can_save:
                 b = self.btn_save
                 if (b.x - MARGIN <= x <= b.right + MARGIN) and (b.y - MARGIN <= y <= b.top + MARGIN):
                     right_hovered = True
@@ -137,7 +143,7 @@ class TwoCameraFrameWindow(Screen):
             if self.hover_rest_frames >= 0:
                 self.hover_rest_frames += 1
                 if self.hover_rest_frames >= self.HOVER_THRESHOLD:
-                    self.on_base_right_click()
+                    self.on_base_save_click()
                     self.hover_rest_frames = -30
         else:
             if self.hover_rest_frames > 0:
@@ -153,17 +159,36 @@ class TwoCameraFrameWindow(Screen):
         if hasattr(self, 'start_rect'):
             self.start_rect.pos = self.btn_start.pos
             self.start_rect.size = (self.btn_start.width * start_progress, self.btn_start.height)
+            self.start_color.a = 0.5 if start_progress > 0 else 0
 
         if hasattr(self, 'save_rect'):
             self.save_rect.pos = self.btn_save.pos
             self.save_rect.size = (self.btn_save.width * right_progress, self.btn_save.height)
+            self.save_color.a = 0.5 if right_progress > 0 else 0
 
     # --- Metody do nadpisywania w klasach dziedziczących ---
     def on_base_start_click(self):
-        pass
+        self.is_training_started = not self.is_training_started
 
-    def on_base_right_click(self):
-        pass
+        if self.is_training_started:
+            print("Trening ROZPOCZĘTY!)")
+            self.has_training_run = False
+            self.is_training_saved = False
+            self.btn_start.text = "STOP"
+            self.btn_start.bg_color = (0.8, 0, 0, 1)
+        else:
+            print("Trening ZATRZYMANY!")
+            self.has_training_run = True
+            self.btn_start.text = "START"
+            self.btn_start.bg_color = (0, 0.7, 0, 1)
+
+    def on_base_save_click(self):
+        can_save = self.has_training_run and not self.is_training_started and not self.is_training_saved
+        if can_save:
+            print("Trening ZAPISANY!")
+            self.is_training_saved = True
+            self.btn_save.text = "ZAPISANO"
+            self.btn_save.bg_color = (0.6, 0, 0, 1)
 
     def add_ui_element(self, widget):
         self.ui_layer.add_widget(widget)
