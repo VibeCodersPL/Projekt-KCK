@@ -9,6 +9,7 @@ from kivy.clock import Clock
 from kivy.graphics.texture import Texture
 import cv2
 import detection.excersises as Ex
+from kivy.core.window import Window
 from kivy.graphics import Color, RoundedRectangle
 from src.layout_api.components.RoundedButton import RoundedButton
 
@@ -87,6 +88,75 @@ class TwoCameraFrameWindow(Screen):
         self.add_ui_element(self.btn_start)
         self.add_ui_element(self.btn_save)
 
+    def handle_base_hover(self):
+        """Logika najeżdżania na bazowe przyciski (START i ZAPISZ)"""
+        if not self.detector:
+            return
+
+        wrists = []
+        for idx in [15, 16]:
+            lm = self.detector.getLandmarkCords(idx)
+            if lm:
+                kivy_x = lm[0] * Window.width
+                kivy_y = (1.0 - lm[1]) * Window.height
+                wrists.append((kivy_x, kivy_y))
+
+        start_hovered = False
+        right_hovered = False
+
+        for x, y in wrists:
+            if hasattr(self, 'btn_start') and self.btn_start.collide_point(x, y):
+                start_hovered = True
+
+            if hasattr(self, 'btn_save') and self.btn_save.collide_point(x, y):
+                right_hovered = True
+
+        # --- LOGIKA START ---
+        if start_hovered:
+            if self.hover_start_frames >= 0:
+                self.hover_start_frames += 1
+                if self.hover_start_frames >= self.HOVER_THRESHOLD:
+                    self.on_base_start_click()
+                    self.hover_start_frames = -30
+        else:
+            self.hover_start_frames = max(0,
+                                          self.hover_start_frames - 2) if self.hover_start_frames > 0 else self.hover_start_frames
+
+        if self.hover_start_frames < 0:
+            self.hover_start_frames += 1
+
+        # --- LOGIKA ZAPISZ ---
+        if right_hovered:
+            if self.hover_rest_frames >= 0:
+                self.hover_rest_frames += 1
+                if self.hover_rest_frames >= self.HOVER_THRESHOLD:
+                    self.on_base_right_click()
+                    self.hover_rest_frames = -30
+        else:
+            self.hover_rest_frames = max(0,
+                                         self.hover_rest_frames - 2) if self.hover_rest_frames > 0 else self.hover_rest_frames
+
+        if self.hover_rest_frames < 0:
+            self.hover_rest_frames += 1
+
+        start_progress = max(0, self.hover_start_frames) / self.HOVER_THRESHOLD
+        right_progress = max(0, self.hover_rest_frames) / self.HOVER_THRESHOLD
+
+        if hasattr(self, 'start_rect'):
+            self.start_rect.pos = self.btn_start.pos
+            self.start_rect.size = (self.btn_start.width * start_progress, self.btn_start.height)
+
+        if hasattr(self, 'save_rect'):
+            self.save_rect.pos = self.btn_save.pos
+            self.save_rect.size = (self.btn_save.width * right_progress, self.btn_save.height)
+
+    # --- Metody do nadpisywania w klasach dziedziczących ---
+    def on_base_start_click(self):
+        pass
+
+    def on_base_right_click(self):
+        pass
+
     def add_ui_element(self, widget):
         self.ui_layer.add_widget(widget)
 
@@ -119,6 +189,8 @@ class TwoCameraFrameWindow(Screen):
     def update_frame(self, dt):
             if not self.cap or not self.cap.isOpened() and not self.cap2 or not self.cap2.isOpened():
                 return
+
+            self.handle_base_hover()
 
             if(self.cap.isOpened()):
                 self.camera_view.texture, self.landmarksFront = self.update_camera(self.cap)
