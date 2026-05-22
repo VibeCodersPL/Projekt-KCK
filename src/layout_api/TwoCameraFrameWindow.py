@@ -9,6 +9,8 @@ from kivy.clock import Clock
 from kivy.graphics.texture import Texture
 import cv2
 import detection.excersises as Ex
+from kivy.graphics import Color, RoundedRectangle
+from src.layout_api.components.RoundedButton import RoundedButton
 
 
 class TwoCameraFrameWindow(Screen):
@@ -18,6 +20,10 @@ class TwoCameraFrameWindow(Screen):
         super().__init__(**kwargs)
         self.landmarksFront = None
         self.landmarksSide = None
+
+        self.hover_start_frames = 0
+        self.hover_rest_frames = 0
+        self.HOVER_THRESHOLD = 30
 
         self.main_layout = FloatLayout()
 
@@ -46,9 +52,40 @@ class TwoCameraFrameWindow(Screen):
         self.ui_layer.add_widget(btn)
         self.ui_layer.add_widget(self.text_box)
 
+        self._setup_base_buttons()
+
         self.main_layout.add_widget(self.cameras_layout)
         self.main_layout.add_widget(self.ui_layer)
         self.add_widget(self.main_layout)
+
+    def _setup_base_buttons(self):
+        """Metoda budująca wspólne przyciski treningowe (START i ZAPISZ)"""
+        self.btn_start = RoundedButton(
+            text="START",
+            font_size='24sp',
+            bg_color=(0, 0.7, 0, 1),
+            radius=10,
+            size_hint=(0.15, 0.1),
+            pos_hint={'x': 0.02, 'y': 0.6}
+        )
+        with self.btn_start.canvas.after:
+            Color(0, 1, 0, 0.5)
+            self.start_rect = RoundedRectangle(pos=self.btn_start.pos, size=(0, 0), radius=[10])
+
+        self.btn_save = RoundedButton(
+            text="ZAPISZ",
+            font_size='24sp',
+            bg_color=(0.4, 0.4, 0.4, 1),
+            radius=10,
+            size_hint=(0.15, 0.1),
+            pos_hint={'right': 0.98, 'y': 0.6}
+        )
+        with self.btn_save.canvas.after:
+            Color(0, 1, 0, 0.5)
+            self.save_rect = RoundedRectangle(pos=self.btn_save.pos, size=(0, 0), radius=[10])
+
+        self.add_ui_element(self.btn_start)
+        self.add_ui_element(self.btn_save)
 
     def add_ui_element(self, widget):
         self.ui_layer.add_widget(widget)
