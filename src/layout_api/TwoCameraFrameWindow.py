@@ -89,7 +89,7 @@ class TwoCameraFrameWindow(Screen):
         self.add_ui_element(self.btn_save)
 
     def handle_base_hover(self):
-        """Logika najeżdżania na bazowe przyciski (START i ZAPISZ)"""
+        """Logika najeżdżania na bazowe przyciski z powiększonym marginesem błędu i płynnym cofaniem"""
         if not self.detector:
             return
 
@@ -104,12 +104,19 @@ class TwoCameraFrameWindow(Screen):
         start_hovered = False
         right_hovered = False
 
-        for x, y in wrists:
-            if hasattr(self, 'btn_start') and self.btn_start.collide_point(x, y):
-                start_hovered = True
+        # Margines Błędu
+        MARGIN = 60
 
-            if hasattr(self, 'btn_save') and self.btn_save.collide_point(x, y):
-                right_hovered = True
+        for x, y in wrists:
+            if hasattr(self, 'btn_start'):
+                b = self.btn_start
+                if (b.x - MARGIN <= x <= b.right + MARGIN) and (b.y - MARGIN <= y <= b.top + MARGIN):
+                    start_hovered = True
+
+            if hasattr(self, 'btn_save'):
+                b = self.btn_save
+                if (b.x - MARGIN <= x <= b.right + MARGIN) and (b.y - MARGIN <= y <= b.top + MARGIN):
+                    right_hovered = True
 
         # --- LOGIKA START ---
         if start_hovered:
@@ -119,8 +126,8 @@ class TwoCameraFrameWindow(Screen):
                     self.on_base_start_click()
                     self.hover_start_frames = -30
         else:
-            self.hover_start_frames = max(0,
-                                          self.hover_start_frames - 2) if self.hover_start_frames > 0 else self.hover_start_frames
+            if self.hover_start_frames > 0:
+                self.hover_start_frames -= 1
 
         if self.hover_start_frames < 0:
             self.hover_start_frames += 1
@@ -133,12 +140,13 @@ class TwoCameraFrameWindow(Screen):
                     self.on_base_right_click()
                     self.hover_rest_frames = -30
         else:
-            self.hover_rest_frames = max(0,
-                                         self.hover_rest_frames - 2) if self.hover_rest_frames > 0 else self.hover_rest_frames
+            if self.hover_rest_frames > 0:
+                self.hover_rest_frames -= 1
 
         if self.hover_rest_frames < 0:
             self.hover_rest_frames += 1
 
+        # --- AKTUALIZACJA PASKÓW ---
         start_progress = max(0, self.hover_start_frames) / self.HOVER_THRESHOLD
         right_progress = max(0, self.hover_rest_frames) / self.HOVER_THRESHOLD
 
