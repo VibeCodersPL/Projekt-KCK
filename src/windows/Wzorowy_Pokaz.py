@@ -13,7 +13,7 @@ from kivy.uix.image import Image
 from kivy.clock import Clock
 
 from detection.base_detection import *
-from RoundedButton import *
+from src.layout_api.components.RoundedButton import RoundedButton
 from PostawaStojaca import *
 from PostawaKleczaca import *
 
