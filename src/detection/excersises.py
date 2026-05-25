@@ -83,12 +83,15 @@ class Exercise:
         """        
         state:State = self._states.get(self._currentStateName)
         
+        invalidConditions:List[Condition] = []
+        
+        
         if landmarksFront:
             for cond in state.conditonFront:
                 angle = self.__calculateThreePointAngle(landmarksFront[cond.landmarks[0]], landmarksFront[cond.landmarks[1]], landmarksFront[cond.landmarks[2]])
                 if abs(angle - cond.degree) - (cond.degree * cond.tolerance) > 0:
                     self.__setLastFrameValue(0)
-                    return False, False
+                    invalidConditions.append(cond)
         
                 
         if landmarksSide:
@@ -96,7 +99,10 @@ class Exercise:
                 angle = self.__calculateThreePointAngle(landmarksSide[cond.landmarks[0]], landmarksSide[cond.landmarks[1]], landmarksSide[cond.landmarks[2]])
                 if abs(angle - cond.degree) - (cond.degree * cond.tolerance) > 0:
                     self.__setLastFrameValue(0)
-                    return False, False
+                    invalidConditions.append(cond)
+        
+        if(len(invalidConditions) >= 0):
+            return False,False,invalidConditions
         
         self.__setLastFrameValue(1)
         return True, self.__isCompletedState()
