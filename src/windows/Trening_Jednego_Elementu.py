@@ -1,4 +1,4 @@
-import detection.excersises as ex
+import src.detection.excersises as ex
 from src.layout_api.TwoCameraFrameWindow import TwoCameraFrameWindow as TCFW
 class Trening_Jednego_Elementu(TCFW):
     def __init__(self, **kwargs):

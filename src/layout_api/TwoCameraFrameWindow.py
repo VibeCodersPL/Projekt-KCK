@@ -8,11 +8,11 @@ from kivy.uix.image import Image
 from kivy.clock import Clock
 from kivy.graphics.texture import Texture
 import cv2
-import detection.excersises as Ex
 from kivy.core.window import Window
 from kivy.graphics import Color, RoundedRectangle
 from src.layout_api.components.RoundedButton import RoundedButton
-
+import src.detection.excersises as Ex
+import src.detection.base_detection as Bd
 
 class TwoCameraFrameWindow(Screen):
     screenExcersise: Ex.Exercise = None
@@ -204,7 +204,7 @@ class TwoCameraFrameWindow(Screen):
         self.manager.current = target_screen
 
     def on_enter(self):
-        self.detector = self.manager.shared_detector
+        self.detector:Bd.BaseDetection = self.manager.shared_detector
         Clock.schedule_once(self._late_camera_init, 0.2)
 
     def _late_camera_init(self, dt):
@@ -219,41 +219,53 @@ class TwoCameraFrameWindow(Screen):
         else:
             print("Kamera nadal zablokowana przez system.")
 
-    def update_frame(self, dt):
+    def update_frame(self, dt, toTexture:bool = True):
             if not self.cap or not self.cap.isOpened() and not self.cap2 or not self.cap2.isOpened():
                 return
 
             self.handle_base_hover()
 
             if(self.cap.isOpened()):
-                self.camera_view.texture, self.landmarksFront = self.update_camera(self.cap)
+                self.frontFrame, self.landmarksFront = self.update_camera(self.cap)
+                if(toTexture):
+                    self.camera_view.texture = self.frameToTexture(self.frontFrame)
+                
+                
                 
             if(self.cap2.isOpened()):
-                self.camera_view2.texture, self.landmarksSide = self.update_camera(self.cap2, True)
+                self.sideFrame, self.landmarksFront = self.update_camera(self.cap2)
+                if(toTexture):
+                    self.camera_view2.texture = self.frameToTexture(self.sideFrame)
+                
+                
 
-    def update_camera(self, cap, isSide:bool = False):
+                
+                
+
+    def update_camera(self, cap):
         ret, frame = cap.read()
         if ret:
             frame = cv2.flip(frame, 1)
 
-            processed_frame, result = self.detector.process_frame(frame)
+            processed_frame, result = self.detector.process_frame(frame, connecting=True)
             landmarks = self.detector.getLandmarks()
 
-            processed_frame = self.process_cv_frame(processed_frame, isSide)
+  
 
-            buf = cv2.flip(processed_frame, 0).tobytes()
+            return processed_frame, landmarks
+
+
+    def frameToTexture(self,frame):
+            buf = cv2.flip(frame, 0).tobytes()
 
             texture = Texture.create(
-                size=(processed_frame.shape[1], processed_frame.shape[0]),
+                size=(frame.shape[1], frame.shape[0]),
                 colorfmt='bgr'
             )
 
             texture.blit_buffer(buf, colorfmt='bgr', bufferfmt='ubyte')
 
-            return texture, landmarks
-
-    def process_cv_frame(self, frame, isSide: bool):
-        return frame
+            return texture
 
     def on_leave(self):
         """Uruchamiane przy wychodzeniu - zwalnianie zasobów"""

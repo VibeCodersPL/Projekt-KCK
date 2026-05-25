@@ -101,11 +101,11 @@ class Exercise:
                     self.__setLastFrameValue(0)
                     invalidConditions.append(cond)
         
-        if(len(invalidConditions) >= 0):
+        if(len(invalidConditions) > 0):
             return False,False,invalidConditions
         
         self.__setLastFrameValue(1)
-        return True, self.__isCompletedState()
+        return True, self.__isCompletedState(), []
 
     def __isCompletedState(self):
         """checks if state of excersise is completed

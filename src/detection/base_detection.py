@@ -6,7 +6,7 @@ import time
 import os
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
-import detection.excersises as ex
+import src.detection.excersises as ex
 
 class BaseDetection:
     def __init__(self):
@@ -34,15 +34,11 @@ class BaseDetection:
         self.landmarker = vision.PoseLandmarker.create_from_options(options)
 
     def process_frame(self, frame, landmarking:bool = False, connecting:bool = False):
-
         h, w, _ = frame.shape
-
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame_rgb)
         timestamp = int(time.time() * 1000)
-
         result = self.landmarker.detect_for_video(mp_image, timestamp)
-    
         if result.pose_landmarks:
             landmarks = result.pose_landmarks[0]
             self.landmarks = landmarks
@@ -55,21 +51,28 @@ class BaseDetection:
                     cv2.line(frame,
                             (int(start_point.x * w), int(start_point.y * h)),
                             (int(end_point.x * w), int(end_point.y * h)),
-                            (255, 255, 0), 2)
+                            (0, 255, 0), 2)
 
             #landmarking
             if landmarking:
                 for lm in landmarks:
                     cx, cy = int(lm.x * w), int(lm.y * h)
-                    cv2.circle(frame, (cx, cy), 5, (0, 0, 255), -1)
+                    cv2.circle(frame, (cx, cy), 5, (255, 0, 0), -1)
 
-            #print(landmarks[14])
-            self._printDegOnLandmark(frame,landmarks[14],20)
-            self._printDegCircOnLandmark(frame,landmarks[14],20)
         else:
             self.landmarks = []
 
         return frame, result
+
+    def connectLandmarks(self, frame, startLandmark, endLandmark, color:tuple[3]):
+        startPoint = self.landmarks[startLandmark]
+        endPoint = self.landmarks[endLandmark]
+        h, w, _ = frame.shape
+        cv2.line(frame,
+                        (int(startPoint.x * w), int(startPoint.y * h)),
+                        (int(endPoint.x * w), int(endPoint.y * h)),
+                        color, 2)
+        return frame
 
     def getLandmarks(self):
         return self.landmarks

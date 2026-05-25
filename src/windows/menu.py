@@ -16,7 +16,7 @@ import os
 import sys
 
 current_dir = os.path.dirname(__file__)
-src_path = os.path.abspath(os.path.join(current_dir, '..'))
+src_path = os.path.abspath(os.path.join(current_dir, '../..'))
 
 if src_path not in sys.path:
     sys.path.append(src_path)
@@ -25,7 +25,7 @@ from Trening_Wspierany import *
 from Wzorowy_Pokaz import *
 from Trening_Jednego_Elementu import *
 from src.layout_api.components.RoundedButton import *
-from detection.base_detection import *
+from src.detection.base_detection import *
 
 class MenuScreen(Screen):
     def __init__(self, **kwargs):
