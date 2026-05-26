@@ -7,6 +7,7 @@ class TTS:
         self.engine.setProperty("rate", 125)
         self.engine.setProperty("volume", 1.0)
         self.set_polish_voice()
+        self.engine.startLoop(False)
 
     def set_polish_voice(self):
         voices = self.engine.getProperty("voices")
@@ -20,4 +21,9 @@ class TTS:
 
     def speak(self, phrase):
         self.engine.say(phrase)
-        self.engine.runAndWait()
+
+    def process_audio(self, dt):
+        self.engine.iterate()
+
+    def stop(self):
+        self.engine.stop()

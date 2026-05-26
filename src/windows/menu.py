@@ -26,6 +26,7 @@ from Wzorowy_Pokaz import *
 from Trening_Jednego_Elementu import *
 from src.layout_api.components.RoundedButton import RoundedButton
 from detection.base_detection import *
+from src.tts.tts import *
 
 class MenuScreen(Screen):
     def __init__(self, **kwargs):
@@ -183,13 +184,12 @@ class MenuScreen(Screen):
             self.manager.current = target_screen
 
 class Menu(App):
-    
-    
-    
     def build(self):
         Window.fullscreen = 'auto'
         sm = ScreenManager(transition=NoTransition())
         sm.shared_detector = BaseDetection()
+        sm.shared_tts = TTS()
+        Clock.schedule_interval(sm.shared_tts.process_audio, 1 / 30)
         sm.add_widget(MenuScreen(name='menu'))
         sm.add_widget(TreningWspierany(name='Trening wspierany'))
         sm.add_widget(Trening_Jednego_Elementu(name='TreningJednegoElementu'))
