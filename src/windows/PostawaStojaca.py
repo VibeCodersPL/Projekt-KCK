@@ -1,72 +1,44 @@
-from kivy.core.window import Window
-from kivy.properties import partial
-from kivy.uix.anchorlayout import AnchorLayout
-from kivy.uix.floatlayout import FloatLayout
-from kivy.uix.label import Label
-from kivy.uix.widget import Widget
-from kivy.uix.screenmanager import ScreenManager, Screen,NoTransition
-from kivy.app import App
-from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.button import Button
-from kivy.graphics import RoundedRectangle, Color
-from kivy.uix.image import Image
-from kivy.clock import Clock
-
-import os
-import sys
-
-current_dir = os.path.dirname(__file__)
-src_path = os.path.abspath(os.path.join(current_dir, '..'))
-
-if src_path not in sys.path:
-    sys.path.append(src_path)
-    
-from Trening_Wspierany import *
+import json
 from Wzorowy_Pokaz import *
-from Trening_Jednego_Elementu import *
-from src.layout_api.components.RoundedButton import RoundedButton
-from detection.base_detection import *
 from src.tts.tts import *
+from pathlib import Path
 
-class MenuScreen(Screen):
+class PostawaStojaca(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        wid = Widget()
-        layout = BoxLayout(orientation='vertical', size_hint=(None, None), size=(350, 320), spacing=20)
-        main_text = Label(
-            text='Cyber-Trener',
-            font_size='32sp',
-            bold=True,
-            size_hint_y=None,
-            height=50
-        )
-        layout.add_widget(main_text)
-        self.screen_mapping = {
-            'Trening wspierany': 'Trening wspierany',
-            'Trening jednego elementu': 'TreningJednegoElementu',
-            'Wzorowy pokaz': 'WzorowyPokaz'
-        }
-        self.menu_buttons = []
-        for mode in self.screen_mapping.keys():
-            button = RoundedButton(
-                text=mode,
-                font_size='26sp',
-                color=(1, 1, 1, 1),
-                bg_color=(0.15, 0.45, 0.85, 1),
-                radius=30
-            )
-            button.bind(on_press=self.change_screen)
-            layout.add_widget(button)
-            self.menu_buttons.append(button)
+        self.speak_event = None
+        JSON_PATH = Path(__file__).resolve().parents[1] / "tts" / "phrases.json"
+        with open(JSON_PATH, "r", encoding="utf-8") as f:
+            self.phrases = json.load(f)
         root = AnchorLayout(anchor_x='center', anchor_y='center')
-        root.add_widget(wid)
+        layout = BoxLayout(orientation='vertical', size_hint=(None, None), size=(1000, 700), spacing=20)
+        self.image_widget = Image(
+            source="../assets/postawa_stojaca.png",
+            size_hint=(1, 0.8),
+            allow_stretch=True,
+            keep_ratio=True
+        )
+        layout.add_widget(self.image_widget)
+        self.menu_buttons = []
+        btn_powrot = RoundedButton(
+            text='Powrót',
+            font_size='36sp',
+            color=(1, 1, 1, 1),
+            bg_color=(0.85, 0.15, 0.15, 1),
+            radius=30,
+            size_hint=(0.4, 0.2),
+            pos_hint={'center_x': 0.5}
+        )
+        btn_powrot.bind(on_press=partial(self.change_screen, 'WzorowyPokaz'))
+        layout.add_widget(btn_powrot)
+        self.menu_buttons.append(btn_powrot)
         root.add_widget(layout)
         self.add_widget(root)
         self.cursor = Image(
             source='../assets/lapka1.png',
             size_hint=(None, None),
             size=(100, 100),
-            pos = (-100,-100)
+            pos=(-100, -100)
         )
         self.add_widget(self.cursor)
         self.detector = None
@@ -77,7 +49,6 @@ class MenuScreen(Screen):
         self.fill_color = None
         self.fill_rectangle = None
 
-
     def clean(self):
         if self.button_hover and self.fill_color and self.fill_rectangle:
             if self.fill_color in self.button_hover.canvas.after.children:
@@ -87,20 +58,29 @@ class MenuScreen(Screen):
         self.fill_color = None
         self.fill_rectangle = None
 
-    def on_enter(self):
+    def on_enter(self, *args):
         self.detector = self.manager.shared_detector
+        self.tts = self.manager.shared_tts
         Clock.schedule_once(self._late_camera_init, 0.2)
+        self.speak_event = Clock.schedule_once(self.speak_phrases, 2)
+
+    def speak_phrases(self, dt):
+        caly_tekst = ". ".join(self.phrases["WzorowyPokazStojaca"])
+        if caly_tekst:
+            self.tts.speak(caly_tekst)
 
     def _late_camera_init(self, dt):
         self.cap = cv2.VideoCapture(0)
         if self.cap.isOpened():
-            self.update = Clock.schedule_interval(self.update_frame, 1/30)
+            self.update = Clock.schedule_interval(self.update_frame, 1 / 30)
         else:
             print("Kamera nadal zablokowana przez system.")
 
-
-
-    def on_leave(self):
+    def on_leave(self, *args):
+        if self.speak_event:
+            self.speak_event.cancel()
+        if self.tts:
+            self.tts.stop()
         if self.update:
             self.update.cancel()
             self.update = None
@@ -108,17 +88,12 @@ class MenuScreen(Screen):
             self.cap.release()
             self.cap = None
         self.detector = None
-
-        
-
         self.clean()
         self.button_hover = None
-        self.cursor.pos=(-100,-100)
+        self.cursor.pos = (-100, -100)
         self.cursor.source = "../assets/lapka1.png"
- 
 
-
-    def update_frame(self,dt):
+    def update_frame(self, dt):
         if not self.cap or not self.cap.isOpened():
             return
 
@@ -133,7 +108,7 @@ class MenuScreen(Screen):
         if cursor_pos is not None:
             x, y = cursor_pos
             win_x = x * Window.width
-            win_y = (1-y) * Window.height
+            win_y = (1 - y) * Window.height
             self.cursor.pos = (win_x - self.cursor.width / 2, win_y - self.cursor.height / 2)
             collision = None
             for button in self.menu_buttons:
@@ -148,22 +123,22 @@ class MenuScreen(Screen):
                     self.button_hover_start = time.time()
                     self.cursor.source = "../assets/lapka2.png"
                     with self.button_hover.canvas.after:
-                        self.fill_color = Color(0.1,0.8,0.2,0.5)
+                        self.fill_color = Color(0.1, 0.8, 0.2, 0.5)
                         self.fill_rectangle = RoundedRectangle(
                             pos=self.button_hover.pos,
-                            size=(self.button_hover.width,0),
-                            radius=[30,30,30,30],
+                            size=(self.button_hover.width, 0),
+                            radius=[30, 30, 30, 30],
                         )
                 else:
                     elapsed_time = time.time() - self.button_hover_start
-                    progress = min(1.0,elapsed_time/2.0)
+                    progress = min(1.0, elapsed_time / 2.0)
                     if self.fill_rectangle:
-                        new_height  = self.button_hover.height * progress
-                        self.fill_rectangle.size = (self.button_hover.width,new_height)
+                        new_height = self.button_hover.height * progress
+                        self.fill_rectangle.size = (self.button_hover.width, new_height)
 
                         if elapsed_time > 2.0:
                             self.clean()
-                            self.change_screen(collision)
+                            self.change_screen("WzorowyPokaz")
                             self.button_hover = None
                             self.cursor.source = "../assets/lapka1.png"
             else:
@@ -172,32 +147,11 @@ class MenuScreen(Screen):
                     self.button_hover = None
                     self.cursor.source = "../assets/lapka1.png"
         else:
-            self.cursor.pos = (-100,-100)
+            self.cursor.pos = (-100, -100)
             if self.button_hover is not None:
                 self.clean()
                 self.button_hover = None
                 self.cursor.source = "../assets/lapka1.png"
 
-    def change_screen(self, instance):
-        target_screen = self.screen_mapping.get(instance.text)
-        if target_screen:
-            self.manager.current = target_screen
-
-class Menu(App):
-    def build(self):
-        Window.fullscreen = 'auto'
-        sm = ScreenManager(transition=NoTransition())
-        sm.shared_detector = BaseDetection()
-        sm.shared_tts = TTS()
-        Clock.schedule_interval(sm.shared_tts.process_audio, 1 / 30)
-        sm.add_widget(MenuScreen(name='menu'))
-        sm.add_widget(TreningWspierany(name='Trening wspierany'))
-        sm.add_widget(Trening_Jednego_Elementu(name='TreningJednegoElementu'))
-        sm.add_widget(WzorowyPokazScreen(name='WzorowyPokaz'))
-        sm.add_widget(PostawaStojaca(name='PostawaStojaca'))
-        sm.add_widget(PostawaKleczaca(name='PostawaKleczaca'))
-        return sm
-
-
-if __name__ == '__main__':
-    Menu().run()
+    def change_screen(self, target_screen, *args):
+        self.manager.current = target_screen
