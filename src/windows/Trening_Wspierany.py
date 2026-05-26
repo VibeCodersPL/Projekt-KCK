@@ -8,7 +8,7 @@ from kivy.uix.popup import Popup
 from src.layout_api.TwoCameraFrameWindow import TwoCameraFrameWindow as TCFW
 from src.layout_api.components.RoundedButton import *
 import src.detection.excersises as ex
-from src.detection.excersises import Condition
+from src.detection.excersises import Condition, State
 
 class TreningWspierany(TCFW):
     def __init__(self, **kwargs):
@@ -24,10 +24,7 @@ class TreningWspierany(TCFW):
         if self.is_training_started:
             #tutaj zwraca tuple (bool, bool) <- (czy jest dobrze wykonywana ta klatka, czy skonczył etap ćwiczenia)
             
-            invalidConditions:List[Condition] = None
-            is_pose_correct, isStateEnded, invalidConditions = self.screenExcersise.checkExcersise(self.landmarksFront, self.landmarksSide)
-            print(is_pose_correct, isStateEnded,invalidConditions)
-            
+            is_pose_correct, isStateEnded = self.screenExcersise.checkExcersise(self.landmarksFront, self.landmarksSide)            
             if is_pose_correct:
                 self.text_box.text = "DOBRZE!"
                 self.text_box.color = (0.2, 1, 0.2, 1)  # Jasnozielony
@@ -37,14 +34,33 @@ class TreningWspierany(TCFW):
                         
                 self.text_box.text = "SKORYGUJ POSTAWE"
                 self.text_box.color = (1, 0.2, 0.2, 1)  # Czerwony
-                
-                #to nie bedzie jeszcze działać
-                for cond in invalidConditions:
-                    self.frontFrame = self.detector.connectLandmarks(self.frontFrame,cond.landmarks[0],cond.landmarks[1],(0,0,255))
-                    self.frontFrame = self.detector.connectLandmarks(self.frontFrame,cond.landmarks[1],cond.landmarks[2],(0,0,255))
                     
+            #to nie bedzie jeszcze działać
             
+            condFront, condSide = self.screenExcersise.getStateConditions()
+               
+            print("Przód:", [c.conditionMet for c in condFront])
+            print("Bok:", [c.conditionMet for c in condSide])
+               
+               
+            for cond in condFront:
+                if cond.conditionMet:
+                    color = (0,255,0)
+                else:
+                    color = (0,0,255)
+                self.frontFrame = self.detector.connectLandmarks(self.frontFrame,cond.landmarks[0],cond.landmarks[1],color)
+                self.frontFrame = self.detector.connectLandmarks(self.frontFrame,cond.landmarks[1],cond.landmarks[2],color)
+                    
             self.camera_view.texture = self.frameToTexture(self.frontFrame)
+            
+            for cond in condSide:
+                if cond.conditionMet:
+                    color = (0,255,0)
+                else:
+                    color = (0,0,255)
+                self.sideFrame = self.detector.connectLandmarks(self.sideFrame,cond.landmarks[0],cond.landmarks[1],color)
+                self.sideFrame = self.detector.connectLandmarks(self.sideFrame,cond.landmarks[1],cond.landmarks[2],color)
+                    
             self.camera_view2.texture = self.frameToTexture(self.sideFrame)
         
         

@@ -233,7 +233,7 @@ class TwoCameraFrameWindow(Screen):
                 
                 
             if(self.cap2.isOpened()):
-                self.sideFrame, self.landmarksFront = self.update_camera(self.cap2)
+                self.sideFrame, self.landmarksSide = self.update_camera(self.cap2)
                 if(toTexture):
                     self.camera_view2.texture = self.frameToTexture(self.sideFrame)
                 
@@ -247,10 +247,8 @@ class TwoCameraFrameWindow(Screen):
         if ret:
             frame = cv2.flip(frame, 1)
 
-            processed_frame, result = self.detector.process_frame(frame, connecting=True)
+            processed_frame, result = self.detector.process_frame(frame)
             landmarks = self.detector.getLandmarks()
-
-  
 
             return processed_frame, landmarks
 
