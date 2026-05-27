@@ -65,6 +65,9 @@ class BaseDetection:
         return frame, result
 
     def connectLandmarks(self, frame, startLandmark, endLandmark, color:tuple[3]):
+        if not self.landmarks or len(self.landmarks) <= max(startLandmark, endLandmark):
+            return frame # Zwracamy klatkę bez rysowania, jeśli nie ma kogo rysować
+
         print(startLandmark, endLandmark)
         startPoint = self.landmarks[startLandmark]
         endPoint = self.landmarks[endLandmark]
