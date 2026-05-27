@@ -23,7 +23,11 @@ class TTS:
         self.engine.say(phrase)
 
     def process_audio(self, dt):
-        self.engine.iterate()
+        
+        try:
+            self.engine.iterate()
+        except TypeError:
+            pass          
 
     def stop(self):
         self.engine.stop()

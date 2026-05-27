@@ -1,6 +1,6 @@
 import json
-from Wzorowy_Pokaz import *
-from src.tts.tts import *
+from windows.Wzorowy_Pokaz import *
+from tts.tts import *
 from pathlib import Path
 
 class PostawaStojaca(Screen):

@@ -17,7 +17,11 @@ from windows.Wzorowy_Pokaz import *
 from windows.Trening_Jednego_Elementu import *
 from layout_api.components.RoundedButton import *
 from detection.base_detection import *
-from src.tts.tts import *
+from windows.PostawaStojaca import *
+from windows.PostawaKleczaca import *
+from tts.tts import *
+
+
 
 class MenuScreen(Screen):
     def __init__(self, **kwargs):
