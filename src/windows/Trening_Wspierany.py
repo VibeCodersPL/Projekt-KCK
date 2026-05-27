@@ -16,11 +16,11 @@ class TreningWspierany(TCFW):
         self.screenExcersise = ex.LowReady()
         self.screenExcersise.setState("START")
         #odkomentować aby pominąć startowanie treningu
-        self.is_training_started = True
+        #self.is_training_started = True
 
     def update_frame(self, dt):
+        
         super().update_frame(dt,False)
-
         if self.is_training_started:
             #tutaj zwraca tuple (bool, bool) <- (czy jest dobrze wykonywana ta klatka, czy skonczył etap ćwiczenia)
             
@@ -29,7 +29,6 @@ class TreningWspierany(TCFW):
                 self.text_box.text = "DOBRZE!"
                 self.text_box.color = (0.2, 1, 0.2, 1)  # Jasnozielony
                 
-
             else:
                         
                 self.text_box.text = "SKORYGUJ POSTAWE"
@@ -64,6 +63,9 @@ class TreningWspierany(TCFW):
         
         
         else:
+            self.camera_view.texture = self.frameToTexture(self.frontFrame)
+            self.camera_view2.texture = self.frameToTexture(self.sideFrame)
+            
             if self.is_training_saved:
                 self.text_box.text = "TRENING ZAPISANY"
                 self.text_box.color = (0.2, 0.6, 1, 1)  # Niebieski
@@ -124,6 +126,8 @@ class TreningWspierany(TCFW):
         btn_no.bind(on_press=self.exit_popup.dismiss)
 
         self.exit_popup.open()
+
+
 
     def confirm_exit(self, target_screen):
         self.exit_popup.dismiss()
