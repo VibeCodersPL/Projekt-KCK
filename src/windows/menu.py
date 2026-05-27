@@ -184,7 +184,6 @@ class Menu(App):
         sm = ScreenManager(transition=NoTransition())
         sm.shared_detector = BaseDetection()
         sm.shared_tts = TTS()
-        Clock.schedule_interval(sm.shared_tts.process_audio, 1 / 30)
         sm.add_widget(MenuScreen(name='menu'))
         sm.add_widget(TreningWspierany(name='Trening wspierany'))
         sm.add_widget(Trening_Jednego_Elementu(name='TreningJednegoElementu'))

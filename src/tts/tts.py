@@ -1,33 +1,39 @@
 import pyttsx3
-
+import threading
 
 class TTS:
     def __init__(self):
-        self.engine = pyttsx3.init()
-        self.engine.setProperty("rate", 125)
-        self.engine.setProperty("volume", 1.0)
-        self.set_polish_voice()
-        self.engine.startLoop(False)
+        self.rate = 125
+        self.volume = 1.0
+
+    def _speak_task(self, phrase):
+        """Prywatna funkcja wykonywana w tle. Na Linuksie najbezpieczniej 
+        jest inicjować silnik i odpalać runAndWait() w tym samym wątku."""
+        try:
+            engine = pyttsx3.init()
+            engine.setProperty("rate", self.rate)
+            engine.setProperty("volume", self.volume)
+            
+            # Ustawienie polskiego głosu
+            voices = engine.getProperty("voices")
+            for voice in voices:
+                voice_name = voice.name.lower()
+                voice_id = voice.id.lower()
+                if "polish" in voice_name or "pl" in voice_id:
+                    engine.setProperty("voice", voice.id)
+                    break
+                    
+            engine.say(phrase)
+            engine.runAndWait()
+        except Exception as e:
+            print(f"Błąd silnika TTS w tle: {e}")
 
     def set_polish_voice(self):
-        voices = self.engine.getProperty("voices")
-        for voice in voices:
-            voice_name = voice.name.lower()
-            voice_id = voice.id.lower()
-            if "polish" in voice_name or "pl" in voice_id:
-                self.engine.setProperty("voice", voice.id)
-                return
-        print("Nie znaleziono polskiego głosu")
+        pass
 
     def speak(self, phrase):
-        self.engine.say(phrase)
-
-    def process_audio(self, dt):
-        
-        try:
-            self.engine.iterate()
-        except TypeError:
-            pass          
+        threading.Thread(target=self._speak_task, args=(phrase,), daemon=True).start()
+       
 
     def stop(self):
-        self.engine.stop()
+        pass
