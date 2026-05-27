@@ -68,11 +68,10 @@ class Exercise:
         self.__lastFramesCorrectnessArray: list[int] = [0] * self.__CORRECT_FRAMES
         self._currentStateName = "DEFAULT"
         self._states: dict[str, State] = {}
-        self._statesNames = ["DEFAULT"]
-        self._stateIdx = 0
         self._timeOfStateStart = time()
         self._states["DEFAULT"] = State()
-        self._maxStateIdx = len(self._states)
+        self._currentState = self._states.get("DEFAULT")
+        
 
     def checkExcersise(self, landmarksFront = None, landmarksSide = None):
         """check one frame for correctness
@@ -84,12 +83,11 @@ class Exercise:
         Returns:
             bool: flag for excersise being done correctly
         """        
-        state:State = self._states.get(self._currentStateName)
                 
         isAllConditionsMet = True
         
         if landmarksFront:
-            for cond in state.conditonFront:
+            for cond in self._currentState.conditonFront:
                 angle = self.__calculateThreePointAngle(landmarksFront[cond.landmarks[0]], landmarksFront[cond.landmarks[1]], landmarksFront[cond.landmarks[2]])
                 if abs(angle - cond.degree) - (cond.degree * cond.tolerance) > 0:
                     self.__setLastFrameValue(0)
@@ -97,14 +95,8 @@ class Exercise:
                 else:
                     cond.conditionMet = True
         
-        
-        print(f"1. Czy landmarksSide ma dane?: {bool(landmarksSide)}")
-        print(f"2. Liczba warunków przód: {len(state.conditonFront)} | bok: {len(state.conditonSide)}")
-        if landmarksSide and len(state.conditonSide) > 0:
-            print(f"3. Przykładowa tolerancja bok: {state.conditonSide[0].tolerance}")
-                        
         if landmarksSide:
-            for cond in state.conditonSide:
+            for cond in self._currentState.conditonSide:
                 angle = self.__calculateThreePointAngle(landmarksSide[cond.landmarks[0]], landmarksSide[cond.landmarks[1]], landmarksSide[cond.landmarks[2]])
                 if abs(angle - cond.degree) - (cond.degree * cond.tolerance) > 0:
                     self.__setLastFrameValue(0)
@@ -124,10 +116,8 @@ class Exercise:
         Returns:
             bool: flag for completion of step of excersise
         """        
-        if sum(self.__lastFramesCorrectnessArray) / len(self.__lastFramesCorrectnessArray) == 1:
-            return True
-        return False
-
+        return (sum(self.__lastFramesCorrectnessArray) / len(self.__lastFramesCorrectnessArray) == 1)
+   
     def __setLastFrameValue(self, value:int):
         """sets last frame value
 
@@ -157,32 +147,34 @@ class Exercise:
 
         Args:
             stateName (str | None, optional): next step name. Defaults to None.
-
-
         Returns:
-            _type_: current step name + duration of previous step or current step name if we are trying to set the same step
+            tuple: current step name and duration of previous step, or just current step name if we are trying to set the same step
         """
-        print(self._statesNames)
-        print(self._stateIdx, self._maxStateIdx)
-        
-        if stateName == self._currentStateName:
-            return self._currentStateName
-        
-        stateDuration = self._states[self._currentStateName].stop()
+
+        currentStateName = next(k for k, v in self._states.items() if v == self._currentState)    
+
+        if stateName == currentStateName:
+            return currentStateName
+
+        stateDuration = self._currentState.stop()
         self.__lastFramesCorrectnessArray = [0] * self.__CORRECT_FRAMES
 
         if stateName is None:
-            self._stateIdx = (self._stateIdx + 1) % self._maxStateIdx
-            self._currentStateName = self._statesNames[self._stateIdx]
+            statesNamesList = list(self._states.keys())
+            currentIndex = statesNamesList.index(currentStateName)
+            stateName = statesNamesList[(currentIndex + 1) % len(statesNamesList)]
+                
         else:
-            if stateName in self._statesNames:
-                self._stateIdx = self._statesNames.index(stateName)
-                self._currentStateName = stateName
-            else:
-                raise ValueError(f"Stan {stateName} nie istnieje!")
+            if stateName not in self._states:
+                raise ValueError(f"Stan '{stateName}' nie istnieje!")
+
+        self._currentState = self._states[stateName] 
+
+        return stateName, (stateDuration - self.__CORRECT_FRAMES / self.__FRAMES_PER_SECOND)
+
         
     
-        return self._currentStateName, (stateDuration - self.__CORRECT_FRAMES/self.__FRAMES_PER_SECOND)
+    
     
     def getStateMessage(self):
         """returns state messege
@@ -207,18 +199,11 @@ class Exercise:
 class LowReady(Exercise):
     def __init__(self):
         super().__init__("LowReady")
-        
-        self._statesNames.append("START")
-        self._statesNames.append("END")
-        
+                
         conditionList = [Condition([23,25,27]),Condition([24,26,28]), Condition()]
         
-        
         self._states["START"] = State(conditionFront=conditionList,conditionSide=conditionList, messege = "START")
-        self._states["END"] = State(messege = "END")
-        
-        self._maxStateIdx = len(self._statesNames)
-        
+        self._states["END"] = State(messege = "END")        
             
         
 
