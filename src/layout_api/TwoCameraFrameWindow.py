@@ -42,6 +42,14 @@ class TwoCameraFrameWindow(Screen):
         self.ui_layer = FloatLayout()
 
         btn = Button(text="Powrot do Menu", size_hint=(None, None), size=(200, 50))
+        btn = RoundedButton(
+            text="Powrót do menu",
+            font_size='16sp',
+            bg_color=(0.15, 0.45, 0.85, 1),
+            radius=30,
+            size_hint=(0.1, 0.07),
+            pos_hint={'center_x': 0.5, 'y': 0.0}
+        )
         btn.bind(on_press=partial(self.change_screen, 'menu'))
 
         self.text_box = Label(
@@ -69,7 +77,7 @@ class TwoCameraFrameWindow(Screen):
             text="START",
             font_size='24sp',
             bg_color=(0, 0.7, 0, 1),
-            radius=10,
+            radius=30,
             size_hint=(0.1, 0.07),
             pos_hint={'x': 0.02, 'y': 0.65}
         )
@@ -81,7 +89,7 @@ class TwoCameraFrameWindow(Screen):
             text="ZAPISZ",
             font_size='24sp',
             bg_color=(0.4, 0.4, 0.4, 1),
-            radius=10,
+            radius=30,
             size_hint=(0.1, 0.07),
             pos_hint={'x': 0.38, 'y': 0.65}
         )
