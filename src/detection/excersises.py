@@ -41,7 +41,7 @@ class State:
         """        ''''''
         self.startTime = time()
         
-    def stop(self):
+    def stop(self, metric):
         """Clens start time for excersie
 
         Returns:
@@ -51,10 +51,10 @@ class State:
         self.startTime = 0
         duration = time() - timeOfStart
         self.durationStats.append(duration) 
+        self.correctnessMetric.append(metric)
+        print(duration, metric)
         return duration
 
-    def addToCorrectnessMetric(self,metric):
-        self.correctnessMetric.append(metric)
 
     
 class Exercise:
@@ -90,29 +90,54 @@ class Exercise:
         """        
                 
         isAllConditionsMet = True
+        total_score = 0.0
+        conditions_count = 0
+        
+        def evaluate_conditions(landmarks, conditions):
+            nonlocal isAllConditionsMet, total_score, conditions_count
+            
+            for cond in conditions:
+                angle = self.__calculateThreePointAngle(
+                    landmarks[cond.landmarks[0]], 
+                    landmarks[cond.landmarks[1]], 
+                    landmarks[cond.landmarks[2]]
+                )
+                
+                error = abs(angle - cond.degree)
+                max_error = cond.degree * cond.tolerance
+                
+                if max_error == 0:
+                    max_error = 1.0 
+                
+                condition_score = max(0.0, 100.0 * (1.0 - (error / max_error)))
+                
+                total_score += condition_score
+                conditions_count += 1
+                
+                if error > max_error:
+                    cond.conditionMet = False
+                    isAllConditionsMet = False
+                else:
+                    cond.conditionMet = True
+        
+        
+        
+        
+        
         
         if landmarksFront:
-            for cond in self._currentState.conditonFront:
-                angle = self.__calculateThreePointAngle(landmarksFront[cond.landmarks[0]], landmarksFront[cond.landmarks[1]], landmarksFront[cond.landmarks[2]])
-                if abs(angle - cond.degree) - (cond.degree * cond.tolerance) > 0:
-                    self.__setLastFrameValue(False)
-                    cond.conditionMet, isAllConditionsMet = False, False
-                else:
-                    cond.conditionMet = True
+            evaluate_conditions(landmarksFront, self._currentState.conditonFront)
         
         if landmarksSide:
-            for cond in self._currentState.conditonSide:
-                angle = self.__calculateThreePointAngle(landmarksSide[cond.landmarks[0]], landmarksSide[cond.landmarks[1]], landmarksSide[cond.landmarks[2]])
-                if abs(angle - cond.degree) - (cond.degree * cond.tolerance) > 0:
-                    self.__setLastFrameValue(False)
-                    cond.conditionMet, isAllConditionsMet = False, False
-                else:
-                    cond.conditionMet = True
+            evaluate_conditions(landmarksSide, self._currentState.conditonSide)
         
-        if isAllConditionsMet == False:
+        frame_score = (total_score / conditions_count) if conditions_count > 0 else 0.0
+        
+        if not isAllConditionsMet:
+            self.__setLastFrameValue(False, frame_score)
             return False, False
         
-        self.__setLastFrameValue(True)
+        self.__setLastFrameValue(True, frame_score)
         return True, self.__isCompletedState()
 
     def __isCompletedState(self):
@@ -123,13 +148,15 @@ class Exercise:
         """        
         return (sum(self.__lastFramesCorrectnessArray) / len(self.__lastFramesCorrectnessArray) == 1)
    
-    def __setLastFrameValue(self, value:bool):
+    def __setLastFrameValue(self, value:bool, metric:bool | None = None):
         """sets last frame value
 
         Args:
             value (int): value of last frame correctness
         """        
         self.__lastFramesCorrectnessArray[self.__frameCounter] = value
+        if metric is not None:
+            self.__lastFramesCorrectnessMetricArray[self.__frameCounter] = metric
         self.__frameCounter = (self.__frameCounter + 1) % self.__CORRECT_FRAMES
     
     def __calculateThreePointAngle(self,leftP, midP, rightP) -> int:
@@ -161,7 +188,7 @@ class Exercise:
         if stateName == currentStateName:
             return currentStateName
 
-        stateDuration = self._currentState.stop()
+        stateDuration = self._currentState.stop(sum(self.__lastFramesCorrectnessMetricArray) / len(self.__lastFramesCorrectnessMetricArray))
         self.__lastFramesCorrectnessArray = [0] * self.__CORRECT_FRAMES
 
         if stateName is None:
@@ -174,6 +201,7 @@ class Exercise:
                 raise ValueError(f"Stan '{stateName}' nie istnieje!")
 
         self._currentState = self._states[stateName] 
+        self._currentState.start()
 
         return stateName, (stateDuration - self.__CORRECT_FRAMES / self.__FRAMES_PER_SECOND)
 
@@ -187,19 +215,21 @@ class Exercise:
         Returns:
             str: state messege
         """        
-        return ((self._states.get(self._currentStateName)).messege)
+        return (self._currentState.messege)
     
     def getStateConditions(self):
-        currentState = self._states.get(self._currentStateName)
-        
-        return currentState.conditonFront, currentState.conditonSide
+        return self._currentState.conditonFront, self._currentState.conditonSide
     
     def getEndStats(self):
         #TODO Rozbudować
         """return end stats of each excersise
-        """        
-        for key, state in self._states.items():
-            print(key, state.durationStats)
+        """ 
+        output = {}   
+        for k, v in self._states.items():
+            v:State
+            output[k] = (v.durationStats,v.correctnessMetric)
+            
+        return output
     
 class LowReady(Exercise):
     def __init__(self):
