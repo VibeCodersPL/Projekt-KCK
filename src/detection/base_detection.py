@@ -6,7 +6,7 @@ import time
 import os
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
-import src.detection.excersises as ex
+import detection.excersises as ex
 
 class BaseDetection:
     def __init__(self):

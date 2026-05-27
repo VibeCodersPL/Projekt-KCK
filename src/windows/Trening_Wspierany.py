@@ -5,10 +5,10 @@ from kivy.uix.label import Label
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.popup import Popup
-from src.layout_api.TwoCameraFrameWindow import TwoCameraFrameWindow as TCFW
-from src.layout_api.components.RoundedButton import *
-import src.detection.excersises as ex
-from src.detection.excersises import Condition, State
+from layout_api.TwoCameraFrameWindow import TwoCameraFrameWindow as TCFW
+from layout_api.components.RoundedButton import *
+import detection.excersises as ex
+from detection.excersises import Condition, State
 
 class TreningWspierany(TCFW):
     def __init__(self, **kwargs):

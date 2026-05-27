@@ -10,9 +10,9 @@ from kivy.graphics.texture import Texture
 import cv2
 from kivy.core.window import Window
 from kivy.graphics import Color, RoundedRectangle
-from src.layout_api.components.RoundedButton import RoundedButton
-import src.detection.excersises as Ex
-import src.detection.base_detection as Bd
+from layout_api.components.RoundedButton import RoundedButton
+import detection.excersises as Ex
+import detection.base_detection as Bd
 
 class TwoCameraFrameWindow(Screen):
     screenExcersise: Ex.Exercise = None
