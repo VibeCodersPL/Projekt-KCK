@@ -33,6 +33,8 @@ class State:
         self.messege = messege
         self.startTime = 0
         self.durationStats = []
+        self.correctnessMetric = []
+    
         
     def start(self):
         """Sets start time for the excersise
@@ -50,7 +52,9 @@ class State:
         duration = time() - timeOfStart
         self.durationStats.append(duration) 
         return duration
-    
+
+    def addToCorrectnessMetric(self,metric):
+        self.correctnessMetric.append(metric)
 
     
 class Exercise:
@@ -65,7 +69,8 @@ class Exercise:
         """
         self._excersiseName = name
         self.__frameCounter = 0
-        self.__lastFramesCorrectnessArray: list[int] = [0] * self.__CORRECT_FRAMES
+        self.__lastFramesCorrectnessArray: list[bool] = [False] * self.__CORRECT_FRAMES
+        self.__lastFramesCorrectnessMetricArray: list[bool] = [False] * self.__CORRECT_FRAMES
         self._currentStateName = "DEFAULT"
         self._states: dict[str, State] = {}
         self._timeOfStateStart = time()
@@ -90,7 +95,7 @@ class Exercise:
             for cond in self._currentState.conditonFront:
                 angle = self.__calculateThreePointAngle(landmarksFront[cond.landmarks[0]], landmarksFront[cond.landmarks[1]], landmarksFront[cond.landmarks[2]])
                 if abs(angle - cond.degree) - (cond.degree * cond.tolerance) > 0:
-                    self.__setLastFrameValue(0)
+                    self.__setLastFrameValue(False)
                     cond.conditionMet, isAllConditionsMet = False, False
                 else:
                     cond.conditionMet = True
@@ -99,7 +104,7 @@ class Exercise:
             for cond in self._currentState.conditonSide:
                 angle = self.__calculateThreePointAngle(landmarksSide[cond.landmarks[0]], landmarksSide[cond.landmarks[1]], landmarksSide[cond.landmarks[2]])
                 if abs(angle - cond.degree) - (cond.degree * cond.tolerance) > 0:
-                    self.__setLastFrameValue(0)
+                    self.__setLastFrameValue(False)
                     cond.conditionMet, isAllConditionsMet = False, False
                 else:
                     cond.conditionMet = True
@@ -107,7 +112,7 @@ class Exercise:
         if isAllConditionsMet == False:
             return False, False
         
-        self.__setLastFrameValue(1)
+        self.__setLastFrameValue(True)
         return True, self.__isCompletedState()
 
     def __isCompletedState(self):
@@ -118,7 +123,7 @@ class Exercise:
         """        
         return (sum(self.__lastFramesCorrectnessArray) / len(self.__lastFramesCorrectnessArray) == 1)
    
-    def __setLastFrameValue(self, value:int):
+    def __setLastFrameValue(self, value:bool):
         """sets last frame value
 
         Args:
