@@ -11,20 +11,11 @@ from kivy.uix.button import Button
 from kivy.graphics import RoundedRectangle, Color
 from kivy.uix.image import Image
 from kivy.clock import Clock
-
-import os
-import sys
-
-current_dir = os.path.dirname(__file__)
-src_path = os.path.abspath(os.path.join(current_dir, '..'))
-
-if src_path not in sys.path:
-    sys.path.append(src_path)
     
-from Trening_Wspierany import *
-from Wzorowy_Pokaz import *
-from Trening_Jednego_Elementu import *
-from src.layout_api.components.RoundedButton import RoundedButton
+from windows.Trening_Wspierany import *
+from windows.Wzorowy_Pokaz import *
+from windows.Trening_Jednego_Elementu import *
+from layout_api.components.RoundedButton import *
 from detection.base_detection import *
 from src.tts.tts import *
 
@@ -63,7 +54,7 @@ class MenuScreen(Screen):
         root.add_widget(layout)
         self.add_widget(root)
         self.cursor = Image(
-            source='../assets/lapka1.png',
+            source='./assets/lapka1.png',
             size_hint=(None, None),
             size=(100, 100),
             pos = (-100,-100)
@@ -114,7 +105,7 @@ class MenuScreen(Screen):
         self.clean()
         self.button_hover = None
         self.cursor.pos=(-100,-100)
-        self.cursor.source = "../assets/lapka1.png"
+        self.cursor.source = "./assets/lapka1.png"
  
 
 
@@ -146,7 +137,7 @@ class MenuScreen(Screen):
                     self.clean()
                     self.button_hover = collision
                     self.button_hover_start = time.time()
-                    self.cursor.source = "../assets/lapka2.png"
+                    self.cursor.source = "./assets/lapka2.png"
                     with self.button_hover.canvas.after:
                         self.fill_color = Color(0.1,0.8,0.2,0.5)
                         self.fill_rectangle = RoundedRectangle(
@@ -165,18 +156,18 @@ class MenuScreen(Screen):
                             self.clean()
                             self.change_screen(collision)
                             self.button_hover = None
-                            self.cursor.source = "../assets/lapka1.png"
+                            self.cursor.source = "./assets/lapka1.png"
             else:
                 if self.button_hover is not None:
                     self.clean()
                     self.button_hover = None
-                    self.cursor.source = "../assets/lapka1.png"
+                    self.cursor.source = "./assets/lapka1.png"
         else:
             self.cursor.pos = (-100,-100)
             if self.button_hover is not None:
                 self.clean()
                 self.button_hover = None
-                self.cursor.source = "../assets/lapka1.png"
+                self.cursor.source = "./assets/lapka1.png"
 
     def change_screen(self, instance):
         target_screen = self.screen_mapping.get(instance.text)

@@ -4,7 +4,7 @@ from time import time
 
 
 class Condition:
-    def __init__(self, landmarks: List[int] = [11,13,15], degree: int = 160, tolerance: int = 0.3):
+    def __init__(self, landmarks: List[int] = [11,13,15], degree: int = 160, tolerance: int = 0.3, conditionMet:bool = True):
         """Representation of one condition of excersise 
 
         Args:
@@ -14,7 +14,8 @@ class Condition:
         """         
         self.landmarks = landmarks
         self.degree = degree
-        self.tolerance = tolerance    
+        self.tolerance = tolerance
+        self.conditionMet = conditionMet
 
 
 class State:
@@ -50,6 +51,8 @@ class State:
         self.durationStats.append(duration) 
         return duration
     
+
+    
 class Exercise:
     __FRAMES_PER_SECOND = 30
     __CORRECT_FRAMES = math.ceil(__FRAMES_PER_SECOND / 4)
@@ -82,21 +85,35 @@ class Exercise:
             bool: flag for excersise being done correctly
         """        
         state:State = self._states.get(self._currentStateName)
+                
+        isAllConditionsMet = True
         
         if landmarksFront:
             for cond in state.conditonFront:
                 angle = self.__calculateThreePointAngle(landmarksFront[cond.landmarks[0]], landmarksFront[cond.landmarks[1]], landmarksFront[cond.landmarks[2]])
                 if abs(angle - cond.degree) - (cond.degree * cond.tolerance) > 0:
                     self.__setLastFrameValue(0)
-                    return False, False
+                    cond.conditionMet, isAllConditionsMet = False, False
+                else:
+                    cond.conditionMet = True
         
-                
+        
+        print(f"1. Czy landmarksSide ma dane?: {bool(landmarksSide)}")
+        print(f"2. Liczba warunków przód: {len(state.conditonFront)} | bok: {len(state.conditonSide)}")
+        if landmarksSide and len(state.conditonSide) > 0:
+            print(f"3. Przykładowa tolerancja bok: {state.conditonSide[0].tolerance}")
+                        
         if landmarksSide:
             for cond in state.conditonSide:
                 angle = self.__calculateThreePointAngle(landmarksSide[cond.landmarks[0]], landmarksSide[cond.landmarks[1]], landmarksSide[cond.landmarks[2]])
                 if abs(angle - cond.degree) - (cond.degree * cond.tolerance) > 0:
                     self.__setLastFrameValue(0)
-                    return False, False
+                    cond.conditionMet, isAllConditionsMet = False, False
+                else:
+                    cond.conditionMet = True
+        
+        if isAllConditionsMet == False:
+            return False, False
         
         self.__setLastFrameValue(1)
         return True, self.__isCompletedState()
@@ -175,6 +192,11 @@ class Exercise:
         """        
         return ((self._states.get(self._currentStateName)).messege)
     
+    def getStateConditions(self):
+        currentState = self._states.get(self._currentStateName)
+        
+        return currentState.conditonFront, currentState.conditonSide
+    
     def getEndStats(self):
         #TODO Rozbudować
         """return end stats of each excersise
@@ -189,7 +211,10 @@ class LowReady(Exercise):
         self._statesNames.append("START")
         self._statesNames.append("END")
         
-        self._states["START"] = State(messege = "START")
+        conditionList = [Condition([23,25,27]),Condition([24,26,28]), Condition()]
+        
+        
+        self._states["START"] = State(conditionFront=conditionList,conditionSide=conditionList, messege = "START")
         self._states["END"] = State(messege = "END")
         
         self._maxStateIdx = len(self._statesNames)
