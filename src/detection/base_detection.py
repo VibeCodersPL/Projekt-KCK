@@ -65,6 +65,7 @@ class BaseDetection:
         return frame, result
 
     def connectLandmarks(self, frame, startLandmark, endLandmark, color:tuple[3]):
+        print(startLandmark, endLandmark)
         startPoint = self.landmarks[startLandmark]
         endPoint = self.landmarks[endLandmark]
         h, w, _ = frame.shape

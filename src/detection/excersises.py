@@ -211,7 +211,10 @@ class LowReady(Exercise):
         self._statesNames.append("START")
         self._statesNames.append("END")
         
-        self._states["START"] = State(messege = "START")
+        conditionList = [Condition([23,25,27]),Condition([24,26,28]), Condition()]
+        
+        
+        self._states["START"] = State(conditionFront=conditionList,conditionSide=conditionList, messege = "START")
         self._states["END"] = State(messege = "END")
         
         self._maxStateIdx = len(self._statesNames)

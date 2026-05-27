@@ -14,7 +14,7 @@ class TreningWspierany(TCFW):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.screenExcersise = ex.LowReady()
-        
+        self.screenExcersise.setState("START")
         #odkomentować aby pominąć startowanie treningu
         self.is_training_started = True
 
@@ -35,7 +35,6 @@ class TreningWspierany(TCFW):
                 self.text_box.text = "SKORYGUJ POSTAWE"
                 self.text_box.color = (1, 0.2, 0.2, 1)  # Czerwony
                     
-            #to nie bedzie jeszcze działać
             
             condFront, condSide = self.screenExcersise.getStateConditions()
                
