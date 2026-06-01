@@ -33,13 +33,15 @@ class State:
         self.messege = messege
         self.startTime = 0
         self.durationStats = []
+        self.correctnessMetric = []
+    
         
     def start(self):
         """Sets start time for the excersise
         """        ''''''
         self.startTime = time()
         
-    def stop(self):
+    def stop(self, metric):
         """Clens start time for excersie
 
         Returns:
@@ -48,9 +50,11 @@ class State:
         timeOfStart = self.startTime        
         self.startTime = 0
         duration = time() - timeOfStart
+        
         self.durationStats.append(duration) 
+        self.correctnessMetric.append(metric)
         return duration
-    
+
 
     
 class Exercise:
@@ -65,14 +69,17 @@ class Exercise:
         """
         self._excersiseName = name
         self.__frameCounter = 0
-        self.__lastFramesCorrectnessArray: list[int] = [0] * self.__CORRECT_FRAMES
+        self.__lastFramesCorrectnessArray: list[bool] = [False] * self.__CORRECT_FRAMES
+        self.__lastFramesCorrectnessMetricArray: list[bool] = [False] * self.__CORRECT_FRAMES
         self._currentStateName = "DEFAULT"
         self._states: dict[str, State] = {}
-        self._statesNames = ["DEFAULT"]
-        self._stateIdx = 0
         self._timeOfStateStart = time()
         self._states["DEFAULT"] = State()
-        self._maxStateIdx = len(self._states)
+        self._currentState = self._states.get("DEFAULT")
+        
+        self._currentState.start()
+        self._timeOfStateStart = self._currentState.startTime
+        
 
     def checkExcersise(self, landmarksFront = None, landmarksSide = None):
         """check one frame for correctness
@@ -84,38 +91,56 @@ class Exercise:
         Returns:
             bool: flag for excersise being done correctly
         """        
-        state:State = self._states.get(self._currentStateName)
                 
         isAllConditionsMet = True
+        total_score = 0.0
+        conditions_count = 0
+        
+        def evaluate_conditions(landmarks, conditions):
+            nonlocal isAllConditionsMet, total_score, conditions_count
+            
+            for cond in conditions:
+                angle = self.__calculateThreePointAngle(
+                    landmarks[cond.landmarks[0]], 
+                    landmarks[cond.landmarks[1]], 
+                    landmarks[cond.landmarks[2]]
+                )
+                
+                error = abs(angle - cond.degree)
+                max_error = cond.degree * cond.tolerance
+                
+                if max_error == 0:
+                    max_error = 1.0 
+                
+                condition_score = max(0.0, 100.0 * (1.0 - (error / max_error)))
+                
+                total_score += condition_score
+                conditions_count += 1
+                
+                if error > max_error:
+                    cond.conditionMet = False
+                    isAllConditionsMet = False
+                else:
+                    cond.conditionMet = True
+        
+        
+        
+        
+        
         
         if landmarksFront:
-            for cond in state.conditonFront:
-                angle = self.__calculateThreePointAngle(landmarksFront[cond.landmarks[0]], landmarksFront[cond.landmarks[1]], landmarksFront[cond.landmarks[2]])
-                if abs(angle - cond.degree) - (cond.degree * cond.tolerance) > 0:
-                    self.__setLastFrameValue(0)
-                    cond.conditionMet, isAllConditionsMet = False, False
-                else:
-                    cond.conditionMet = True
+            evaluate_conditions(landmarksFront, self._currentState.conditonFront)
         
-        
-        print(f"1. Czy landmarksSide ma dane?: {bool(landmarksSide)}")
-        print(f"2. Liczba warunków przód: {len(state.conditonFront)} | bok: {len(state.conditonSide)}")
-        if landmarksSide and len(state.conditonSide) > 0:
-            print(f"3. Przykładowa tolerancja bok: {state.conditonSide[0].tolerance}")
-                        
         if landmarksSide:
-            for cond in state.conditonSide:
-                angle = self.__calculateThreePointAngle(landmarksSide[cond.landmarks[0]], landmarksSide[cond.landmarks[1]], landmarksSide[cond.landmarks[2]])
-                if abs(angle - cond.degree) - (cond.degree * cond.tolerance) > 0:
-                    self.__setLastFrameValue(0)
-                    cond.conditionMet, isAllConditionsMet = False, False
-                else:
-                    cond.conditionMet = True
+            evaluate_conditions(landmarksSide, self._currentState.conditonSide)
         
-        if isAllConditionsMet == False:
+        frame_score = (total_score / conditions_count) if conditions_count > 0 else 0.0
+        
+        if not isAllConditionsMet:
+            self.__setLastFrameValue(False, frame_score)
             return False, False
         
-        self.__setLastFrameValue(1)
+        self.__setLastFrameValue(True, frame_score)
         return True, self.__isCompletedState()
 
     def __isCompletedState(self):
@@ -124,17 +149,17 @@ class Exercise:
         Returns:
             bool: flag for completion of step of excersise
         """        
-        if sum(self.__lastFramesCorrectnessArray) / len(self.__lastFramesCorrectnessArray) == 1:
-            return True
-        return False
-
-    def __setLastFrameValue(self, value:int):
+        return (sum(self.__lastFramesCorrectnessArray) / len(self.__lastFramesCorrectnessArray) == 1)
+   
+    def __setLastFrameValue(self, value:bool, metric:bool | None = None):
         """sets last frame value
 
         Args:
             value (int): value of last frame correctness
         """        
         self.__lastFramesCorrectnessArray[self.__frameCounter] = value
+        if metric is not None:
+            self.__lastFramesCorrectnessMetricArray[self.__frameCounter] = metric
         self.__frameCounter = (self.__frameCounter + 1) % self.__CORRECT_FRAMES
     
     def __calculateThreePointAngle(self,leftP, midP, rightP) -> int:
@@ -149,40 +174,54 @@ class Exercise:
             int: angle of three points in degrees
         """        
         dis = lambda p1, p2: math.sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2))                
-        return int(math.degrees(math.acos((math.pow(dis(midP, leftP), 2) + math.pow(dis(midP, rightP), 2) - math.pow(dis(rightP, leftP), 2)) / (2 * dis(leftP, midP) * dis(rightP, midP)))))
-
+        try:
+            val = (math.pow(dis(midP, leftP), 2) + math.pow(dis(midP, rightP), 2) - math.pow(dis(rightP, leftP), 2)) / (2 * dis(leftP, midP) * dis(rightP, midP))
+            # DODAJ ZABEZPIECZENIE:
+            val = max(-1.0, min(1.0, val))
+            return int(math.degrees(math.acos(val)))
+        except ZeroDivisionError:
+            return 0
     
     def setState(self, stateName: str | None = None):
         """sets state of excersise to next or to named like stateName arg
 
         Args:
             stateName (str | None, optional): next step name. Defaults to None.
-
-
         Returns:
-            _type_: current step name + duration of previous step or current step name if we are trying to set the same step
+            tuple: current step name and duration of previous step, or just current step name if we are trying to set the same step
         """
-        print(self._statesNames)
-        print(self._stateIdx, self._maxStateIdx)
+
+        currentStateName = next(k for k, v in self._states.items() if v == self._currentState)    
+
+        if stateName == currentStateName:
+            return currentStateName
+
+
+
+        avg_metric_of_correct_frames = sum(self.__lastFramesCorrectnessMetricArray) / len(self.__lastFramesCorrectnessMetricArray)
+        stateDuration = self._currentState.stop(avg_metric_of_correct_frames)
         
-        if stateName == self._currentStateName:
-            return self._currentStateName
-        
-        stateDuration = self._states[self._currentStateName].stop()
-        self.__lastFramesCorrectnessArray = [0] * self.__CORRECT_FRAMES
+        self.__lastFramesCorrectnessArray = [False] * self.__CORRECT_FRAMES
+        self.__lastFramesCorrectnessMetricArray = [0.0] * self.__CORRECT_FRAMES
+
 
         if stateName is None:
-            self._stateIdx = (self._stateIdx + 1) % self._maxStateIdx
-            self._currentStateName = self._statesNames[self._stateIdx]
+            statesNamesList = list(self._states.keys())
+            currentIndex = statesNamesList.index(currentStateName)
+            stateName = statesNamesList[(currentIndex + 1) % len(statesNamesList)]
+                
         else:
-            if stateName in self._statesNames:
-                self._stateIdx = self._statesNames.index(stateName)
-                self._currentStateName = stateName
-            else:
-                raise ValueError(f"Stan {stateName} nie istnieje!")
+            if stateName not in self._states:
+                raise ValueError(f"Stan '{stateName}' nie istnieje!")
+
+        self._currentState = self._states[stateName] 
+        self._currentState.start()
+
+        return stateName, (stateDuration - self.__CORRECT_FRAMES / self.__FRAMES_PER_SECOND)
+
         
     
-        return self._currentStateName, (stateDuration - self.__CORRECT_FRAMES/self.__FRAMES_PER_SECOND)
+    
     
     def getStateMessage(self):
         """returns state messege
@@ -190,35 +229,30 @@ class Exercise:
         Returns:
             str: state messege
         """        
-        return ((self._states.get(self._currentStateName)).messege)
+        return (self._currentState.messege)
     
     def getStateConditions(self):
-        currentState = self._states.get(self._currentStateName)
-        
-        return currentState.conditonFront, currentState.conditonSide
+        return self._currentState.conditonFront, self._currentState.conditonSide
     
     def getEndStats(self):
         #TODO Rozbudować
         """return end stats of each excersise
-        """        
-        for key, state in self._states.items():
-            print(key, state.durationStats)
+        """ 
+        output = {}   
+        for k, v in self._states.items():
+            v:State
+            output[k] = (v.durationStats,v.correctnessMetric)
+            
+        return output
     
 class LowReady(Exercise):
     def __init__(self):
         super().__init__("LowReady")
-        
-        self._statesNames.append("START")
-        self._statesNames.append("END")
-        
+                
         conditionList = [Condition([23,25,27]),Condition([24,26,28]), Condition()]
         
-        
         self._states["START"] = State(conditionFront=conditionList,conditionSide=conditionList, messege = "START")
-        self._states["END"] = State(messege = "END")
-        
-        self._maxStateIdx = len(self._statesNames)
-        
+        self._states["END"] = State(conditionFront=conditionList,conditionSide=conditionList, messege = "END")     
             
         
 

@@ -16,15 +16,27 @@ class TreningWspierany(TCFW):
         self.screenExcersise = ex.LowReady()
         self.screenExcersise.setState("START")
         #odkomentować aby pominąć startowanie treningu
-        #self.is_training_started = True
+        self.debug = True
+        if self.debug:
+            self.is_training_started = True
 
     def update_frame(self, dt):
         
         super().update_frame(dt,False)
         if self.is_training_started:
             #tutaj zwraca tuple (bool, bool) <- (czy jest dobrze wykonywana ta klatka, czy skonczył etap ćwiczenia)
+            if self.debug:
+                print(self.screenExcersise.getStateMessage())
             
             is_pose_correct, isStateEnded = self.screenExcersise.checkExcersise(self.landmarksFront, self.landmarksSide)            
+            
+            if self.debug:
+                if isStateEnded:
+                    print('zmieniam stan')
+                    self.screenExcersise.setState(None)
+                    print(self.screenExcersise.getStateMessage())
+                    print(self.screenExcersise.getEndStats())
+                                
             if is_pose_correct:
                 self.text_box.text = "DOBRZE!"
                 self.text_box.color = (0.2, 1, 0.2, 1)  # Jasnozielony
@@ -36,11 +48,6 @@ class TreningWspierany(TCFW):
                     
             
             condFront, condSide = self.screenExcersise.getStateConditions()
-               
-            print("Przód:", [c.conditionMet for c in condFront])
-            print("Bok:", [c.conditionMet for c in condSide])
-               
-               
             for cond in condFront:
                 if cond.conditionMet:
                     color = (0,255,0)
