@@ -252,7 +252,7 @@ class LowReady(Exercise):
         conditionList = [Condition([23,25,27]),Condition([24,26,28]), Condition()]
         
         self._states["START"] = State(conditionFront=conditionList,conditionSide=conditionList, messege = "START")
-        self._states["END"] = State(messege = "END")        
+        self._states["END"] = State(conditionFront=conditionList,conditionSide=conditionList, messege = "END")     
             
         
 
