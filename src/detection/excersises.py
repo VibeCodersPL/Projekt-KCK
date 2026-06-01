@@ -50,9 +50,9 @@ class State:
         timeOfStart = self.startTime        
         self.startTime = 0
         duration = time() - timeOfStart
+        
         self.durationStats.append(duration) 
         self.correctnessMetric.append(metric)
-        print(duration, metric)
         return duration
 
 
@@ -76,6 +76,9 @@ class Exercise:
         self._timeOfStateStart = time()
         self._states["DEFAULT"] = State()
         self._currentState = self._states.get("DEFAULT")
+        
+        self._currentState.start()
+        self._timeOfStateStart = self._currentState.startTime
         
 
     def checkExcersise(self, landmarksFront = None, landmarksSide = None):
@@ -171,8 +174,13 @@ class Exercise:
             int: angle of three points in degrees
         """        
         dis = lambda p1, p2: math.sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2))                
-        return int(math.degrees(math.acos((math.pow(dis(midP, leftP), 2) + math.pow(dis(midP, rightP), 2) - math.pow(dis(rightP, leftP), 2)) / (2 * dis(leftP, midP) * dis(rightP, midP)))))
-
+        try:
+            val = (math.pow(dis(midP, leftP), 2) + math.pow(dis(midP, rightP), 2) - math.pow(dis(rightP, leftP), 2)) / (2 * dis(leftP, midP) * dis(rightP, midP))
+            # DODAJ ZABEZPIECZENIE:
+            val = max(-1.0, min(1.0, val))
+            return int(math.degrees(math.acos(val)))
+        except ZeroDivisionError:
+            return 0
     
     def setState(self, stateName: str | None = None):
         """sets state of excersise to next or to named like stateName arg
@@ -188,8 +196,14 @@ class Exercise:
         if stateName == currentStateName:
             return currentStateName
 
-        stateDuration = self._currentState.stop(sum(self.__lastFramesCorrectnessMetricArray) / len(self.__lastFramesCorrectnessMetricArray))
-        self.__lastFramesCorrectnessArray = [0] * self.__CORRECT_FRAMES
+
+
+        avg_metric_of_correct_frames = sum(self.__lastFramesCorrectnessMetricArray) / len(self.__lastFramesCorrectnessMetricArray)
+        stateDuration = self._currentState.stop(avg_metric_of_correct_frames)
+        
+        self.__lastFramesCorrectnessArray = [False] * self.__CORRECT_FRAMES
+        self.__lastFramesCorrectnessMetricArray = [0.0] * self.__CORRECT_FRAMES
+
 
         if stateName is None:
             statesNamesList = list(self._states.keys())
