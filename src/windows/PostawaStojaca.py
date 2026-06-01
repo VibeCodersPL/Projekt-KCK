@@ -1,6 +1,6 @@
 import json
-from Wzorowy_Pokaz import *
-from src.tts.tts import *
+from windows.Wzorowy_Pokaz import *
+from tts.tts import *
 from pathlib import Path
 
 class PostawaStojaca(Screen):
@@ -13,7 +13,7 @@ class PostawaStojaca(Screen):
         root = AnchorLayout(anchor_x='center', anchor_y='center')
         layout = BoxLayout(orientation='vertical', size_hint=(None, None), size=(1000, 700), spacing=20)
         self.image_widget = Image(
-            source="../assets/postawa_stojaca.png",
+            source="./assets/postawa_stojaca.png",
             size_hint=(1, 0.8),
             allow_stretch=True,
             keep_ratio=True
@@ -35,7 +35,7 @@ class PostawaStojaca(Screen):
         root.add_widget(layout)
         self.add_widget(root)
         self.cursor = Image(
-            source='../assets/lapka1.png',
+            source='./assets/lapka1.png',
             size_hint=(None, None),
             size=(100, 100),
             pos=(-100, -100)
@@ -91,7 +91,7 @@ class PostawaStojaca(Screen):
         self.clean()
         self.button_hover = None
         self.cursor.pos = (-100, -100)
-        self.cursor.source = "../assets/lapka1.png"
+        self.cursor.source = "./assets/lapka1.png"
 
     def update_frame(self, dt):
         if not self.cap or not self.cap.isOpened():
@@ -121,7 +121,7 @@ class PostawaStojaca(Screen):
                     self.clean()
                     self.button_hover = collision
                     self.button_hover_start = time.time()
-                    self.cursor.source = "../assets/lapka2.png"
+                    self.cursor.source = "./assets/lapka2.png"
                     with self.button_hover.canvas.after:
                         self.fill_color = Color(0.1, 0.8, 0.2, 0.5)
                         self.fill_rectangle = RoundedRectangle(
@@ -140,18 +140,18 @@ class PostawaStojaca(Screen):
                             self.clean()
                             self.change_screen("WzorowyPokaz")
                             self.button_hover = None
-                            self.cursor.source = "../assets/lapka1.png"
+                            self.cursor.source = "./assets/lapka1.png"
             else:
                 if self.button_hover is not None:
                     self.clean()
                     self.button_hover = None
-                    self.cursor.source = "../assets/lapka1.png"
+                    self.cursor.source = "./assets/lapka1.png"
         else:
             self.cursor.pos = (-100, -100)
             if self.button_hover is not None:
                 self.clean()
                 self.button_hover = None
-                self.cursor.source = "../assets/lapka1.png"
+                self.cursor.source = "./assets/lapka1.png"
 
     def change_screen(self, target_screen, *args):
         self.manager.current = target_screen

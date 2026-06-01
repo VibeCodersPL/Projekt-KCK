@@ -13,9 +13,9 @@ from kivy.uix.image import Image
 from kivy.clock import Clock
 
 from detection.base_detection import *
-from src.layout_api.components.RoundedButton import RoundedButton
-from PostawaStojaca import *
-from PostawaKleczaca import *
+from layout_api.components.RoundedButton import RoundedButton
+from windows.PostawaStojaca import *
+from windows.PostawaKleczaca import *
 
 
 class WzorowyPokazScreen(Screen):

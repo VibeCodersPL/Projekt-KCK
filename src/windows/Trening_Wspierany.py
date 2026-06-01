@@ -1,35 +1,78 @@
-import detection.excersises as ex
+from typing import List
+
 from kivy.core.image import Texture
 from kivy.uix.label import Label
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.popup import Popup
-import cv2
-from src.layout_api.TwoCameraFrameWindow import TwoCameraFrameWindow as TCFW
-from src.layout_api.components.RoundedButton import *
+from layout_api.TwoCameraFrameWindow import TwoCameraFrameWindow as TCFW
+from layout_api.components.RoundedButton import *
+import detection.excersises as ex
+from detection.excersises import Condition, State
 
 class TreningWspierany(TCFW):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.screenExcersise = ex.LowReady()
-
-        self.is_pose_correct = False
+        self.screenExcersise.setState("START")
+        #odkomentować aby pominąć startowanie treningu
+        self.debug = True
+        if self.debug:
+            self.is_training_started = True
 
     def update_frame(self, dt):
-        super().update_frame(dt)
-
+        
+        super().update_frame(dt,False)
         if self.is_training_started:
             #tutaj zwraca tuple (bool, bool) <- (czy jest dobrze wykonywana ta klatka, czy skonczył etap ćwiczenia)
-            self.is_pose_correct, isStateEnded = self.screenExcersise.checkExcersise(self.landmarksFront, self.landmarksSide)
-            if self.is_pose_correct:
+            if self.debug:
+                print(self.screenExcersise.getStateMessage())
+            
+            is_pose_correct, isStateEnded = self.screenExcersise.checkExcersise(self.landmarksFront, self.landmarksSide)            
+            
+            if self.debug:
+                if isStateEnded:
+                    print('zmieniam stan')
+                    self.screenExcersise.setState(None)
+                    print(self.screenExcersise.getStateMessage())
+                    print(self.screenExcersise.getEndStats())
+                                
+            if is_pose_correct:
                 self.text_box.text = "DOBRZE!"
                 self.text_box.color = (0.2, 1, 0.2, 1)  # Jasnozielony
+                
             else:
+                        
                 self.text_box.text = "SKORYGUJ POSTAWE"
                 self.text_box.color = (1, 0.2, 0.2, 1)  # Czerwony
+                    
+            
+            condFront, condSide = self.screenExcersise.getStateConditions()
+            for cond in condFront:
+                if cond.conditionMet:
+                    color = (0,255,0)
+                else:
+                    color = (0,0,255)
+                self.frontFrame = self.detector.connectLandmarks(self.frontFrame,cond.landmarks[0],cond.landmarks[1],color)
+                self.frontFrame = self.detector.connectLandmarks(self.frontFrame,cond.landmarks[1],cond.landmarks[2],color)
+                    
+            self.camera_view.texture = self.frameToTexture(self.frontFrame)
+            
+            for cond in condSide:
+                if cond.conditionMet:
+                    color = (0,255,0)
+                else:
+                    color = (0,0,255)
+                self.sideFrame = self.detector.connectLandmarks(self.sideFrame,cond.landmarks[0],cond.landmarks[1],color)
+                self.sideFrame = self.detector.connectLandmarks(self.sideFrame,cond.landmarks[1],cond.landmarks[2],color)
+                    
+            self.camera_view2.texture = self.frameToTexture(self.sideFrame)
+        
+        
         else:
-            self.is_pose_correct = False
-
+            self.camera_view.texture = self.frameToTexture(self.frontFrame)
+            self.camera_view2.texture = self.frameToTexture(self.sideFrame)
+            
             if self.is_training_saved:
                 self.text_box.text = "TRENING ZAPISANY"
                 self.text_box.color = (0.2, 0.6, 1, 1)  # Niebieski
@@ -39,6 +82,8 @@ class TreningWspierany(TCFW):
             else:
                 self.text_box.text = "ROZPOCZNIJ CWICZENIE"
                 self.text_box.color = (1, 1, 1, 1)  # Biały
+                
+        
 
     def change_screen(self, target_screen, instance):
         if target_screen == 'menu':
@@ -89,7 +134,10 @@ class TreningWspierany(TCFW):
 
         self.exit_popup.open()
 
+
+
     def confirm_exit(self, target_screen):
         self.exit_popup.dismiss()
         print("Trening przerwany. Ćwiczenie nie zostało zapisane.")
         self.manager.current = target_screen
+        
