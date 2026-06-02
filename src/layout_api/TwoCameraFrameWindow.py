@@ -106,30 +106,25 @@ class TwoCameraFrameWindow(Screen):
             return
 
         wrists = []
-        for idx in [15, 16]:
+        for idx in [15, 17, 19, 16, 18, 20]:
             lm = self.detector.getLandmarkCords(idx)
             if lm:
-                kivy_x = lm[0] * Window.width
-                kivy_y = (1.0 - lm[1]) * Window.height
+                kivy_x = self.camera_view.x + (lm[0] * self.camera_view.width)
+                kivy_y = self.camera_view.y + ((1.0 - lm[1]) * self.camera_view.height)
                 wrists.append((kivy_x, kivy_y))
 
         start_hovered = False
         right_hovered = False
 
-        # Margines Błędu
-        MARGIN = 60
-
         can_save = self.has_training_run and not self.is_training_started and not self.is_training_saved
 
         for x, y in wrists:
             if hasattr(self, 'btn_start'):
-                b = self.btn_start
-                if (b.x - MARGIN <= x <= b.right + MARGIN) and (b.y - MARGIN <= y <= b.top + MARGIN):
+                if self.btn_start.collide_point(x, y):
                     start_hovered = True
 
             if hasattr(self, 'btn_save') and can_save:
-                b = self.btn_save
-                if (b.x - MARGIN <= x <= b.right + MARGIN) and (b.y - MARGIN <= y <= b.top + MARGIN):
+                if self.btn_save.collide_point(x, y):
                     right_hovered = True
 
         # --- LOGIKA START ---
