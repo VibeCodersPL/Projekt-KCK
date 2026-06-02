@@ -60,7 +60,7 @@ class PostawaKleczaca(Screen):
         self.fill_rectangle = None
 
     def on_enter(self, *args):
-        self.detector = self.manager.shared_detector
+        self.detector = self.manager.shared_detector_front
         self.tts = self.manager.shared_tts
         Clock.schedule_once(self._late_camera_init, 0.2)
         self.speak_event = Clock.schedule_once(self.speak_phrases, 2)

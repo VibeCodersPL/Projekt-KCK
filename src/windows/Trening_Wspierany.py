@@ -13,7 +13,7 @@ from detection.excersises import Condition, State
 class TreningWspierany(TCFW):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.screenExcersise = ex.LowReady()
+        self.screenExcersise = ex.StandingStance()
         self.screenExcersise.setState("START")
         
         self.debug = True
@@ -55,8 +55,8 @@ class TreningWspierany(TCFW):
                     color = (0,255,0)
                 else:
                     color = (0,0,255)
-                self.frontFrame = self.detector.connectLandmarks(self.frontFrame,cond.landmarks[0],cond.landmarks[1],color)
-                self.frontFrame = self.detector.connectLandmarks(self.frontFrame,cond.landmarks[1],cond.landmarks[2],color)
+                self.frontFrame = self.detector_front.connectLandmarks(self.frontFrame,cond.landmarks[0],cond.landmarks[1],color)
+                self.frontFrame = self.detector_front.connectLandmarks(self.frontFrame,cond.landmarks[1],cond.landmarks[2],color)
                     
             self.camera_view.texture = self.frameToTexture(self.frontFrame)
             # Rysowanie na kamerze bocznej
@@ -65,8 +65,8 @@ class TreningWspierany(TCFW):
                     color = (0,255,0)
                 else:
                     color = (0,0,255)
-                self.sideFrame = self.detector.connectLandmarks(self.sideFrame,cond.landmarks[0],cond.landmarks[1],color)
-                self.sideFrame = self.detector.connectLandmarks(self.sideFrame,cond.landmarks[1],cond.landmarks[2],color)
+                self.sideFrame = self.detector_side.connectLandmarks(self.sideFrame,cond.landmarks[0],cond.landmarks[1],color)
+                self.sideFrame = self.detector_side.connectLandmarks(self.sideFrame,cond.landmarks[1],cond.landmarks[2],color)
                     
             self.camera_view2.texture = self.frameToTexture(self.sideFrame)
         
