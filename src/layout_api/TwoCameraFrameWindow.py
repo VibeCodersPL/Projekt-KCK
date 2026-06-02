@@ -24,10 +24,6 @@ class TwoCameraFrameWindow(Screen):
         self.landmarksFront = None
         self.landmarksSide = None
 
-        self.is_training_started = False  # Czy trening już się zaczął
-        self.has_training_run = False  # Czy było start i potem stop (trening się zaczął i skończyć -> można go zapisać)
-        self.is_training_saved = False  # Czy trening został już zapisany
-
         self.main_layout = FloatLayout()
 
         self.cameras_layout = BoxLayout(orientation="horizontal", spacing=15, size_hint=(1, 0.8),
@@ -112,9 +108,11 @@ class TwoCameraFrameWindow(Screen):
                 wrists.append((kivy_x, kivy_y))
 
         # Ograniczanie klikalności przycisku ZAPISZ
-        self.btn_save.is_hover_active = self.has_training_run and not self.is_training_started and not self.is_training_saved
-
-        # Przekaż punkty do przycisków – one same zajmą się resztą
+        if self.screenExcersise:
+            self.btn_save.is_hover_active = (self.screenExcersise.has_run and 
+                                             not self.screenExcersise.is_running and 
+                                             not self.screenExcersise.is_saved)
+            
         if hasattr(self, 'btn_start'):
             self.btn_start.process_hover(wrists)
             
@@ -123,27 +121,34 @@ class TwoCameraFrameWindow(Screen):
 
     # --- Metody do nadpisywania w klasach dziedziczących ---
     def on_base_start_click(self):
-        self.is_training_started = not self.is_training_started
+# Zabezpieczenie, gdyby obiekt ćwiczenia jeszcze nie istniał
+        if not self.screenExcersise: return
 
-        if self.is_training_started:
-            print("Trening ROZPOCZĘTY!)")
-            self.has_training_run = False
-            self.is_training_saved = False
+        # Klasa Exercise sama decyduje co zrobić (start/stop) i zwraca nam nowy stan
+        is_now_running = self.screenExcersise.toggle_running()
+
+        if is_now_running:
+            print("Trening ROZPOCZĘTY!")
             self.btn_start.text = "STOP"
             self.btn_start.bg_color = (0.8, 0, 0, 1)
         else:
             print("Trening ZATRZYMANY!")
-            self.has_training_run = True
             self.btn_start.text = "START"
             self.btn_start.bg_color = (0, 0.7, 0, 1)
 
     def on_base_save_click(self):
-        can_save = self.has_training_run and not self.is_training_started and not self.is_training_saved
+        if not self.screenExcersise: return
+        
+        # Pobieramy stan zapisu bezpośrednio z klasy ćwiczenia
+        can_save = self.screenExcersise.has_run and not self.screenExcersise.is_running and not self.screenExcersise.is_saved
+        
         if can_save:
             print("Trening ZAPISANY!")
-            self.is_training_saved = True
+            self.screenExcersise.mark_as_saved() # Oznaczamy w modelu, że zapisano
             self.btn_save.text = "ZAPISANO"
             self.btn_save.bg_color = (0.6, 0, 0, 1)
+            
+            # W TYM MIEJSCU wkleisz też swoją logikę bazy danych (np. db_manager.save_trening)
 
 
     def set_title_text(self, text, color=(1, 1, 1, 1)):

@@ -76,14 +76,35 @@ class Exercise:
         self._states["DEFAULT"] = State()
         self._currentState = self._states.get("DEFAULT")
         self._timeOfExcersiseStart = 0
+        self.is_running = False
+        self.has_run = False
+        self.is_saved = False
 
 
         
     def start_excersise(self):
+        self.is_running = True
+        self.has_run = False
+        self.is_saved = False
         self._currentState.start()
         self._timeOfExcersiseStart = time()
+        
+        
     def stop_excersise(self):
+        self.is_running = False
+        self.has_run = True
         return time() - self._timeOfExcersiseStart
+        
+    def toggle_running(self) -> bool:
+        """Przełącza stan ćwiczenia. Zwraca True jeśli wystartowało, False jeśli zatrzymano."""
+        if self.is_running:
+            self.stop_excersise()
+        else:
+            self.start_excersise()
+        return self.is_running
+        
+    def mark_as_saved(self):
+        self.is_saved = True
         
 
     def checkExcersise(self, landmarksFront = None, landmarksSide = None):
