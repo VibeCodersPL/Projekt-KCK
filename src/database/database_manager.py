@@ -18,43 +18,28 @@ class DatabaseManager:
                     DataWykonania DATE,
                     CzasRozpoczecia TIME,
                     CzasZakonczenia TIME,
-                    RodzajTreningu INTEGER
-                )
-            ''') #w RodzajTreningu: jeżeli 1 -> trening wpierany; 2 -> trening jednego elementu
-        
-
-            # Tabela pomocnicza: TreningWspierany (Rodzaj = 1)
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS TreningWspierany (
-                    IDTreningu INTEGER,
-                    NrCwiczenia INTEGER,
-                    StanCwiczenia INTEGER,
-                    FOREIGN KEY(IDTreningu) REFERENCES Treningi(IDTreningu)
+                    RodzajTreningu INTEGER #1 wspierany #2 pojedynczego elementu
                 )
             ''')
+                
 
-            # Tabela pomocnicza: TreningJednegoElementu (Rodzaj = 2)
+            # Tabela pomocnicza:
             cursor.execute('''
-                CREATE TABLE IF NOT EXISTS TreningJednegoElementu (
+                CREATE TABLE IF NOT EXISTS StatystykiCwiczen (
                     IDTreningu INTEGER,
-                    NrCwiczenia INTEGER,
-                    StanCwiczenia INTEGER,
-                    FOREIGN KEY(IDTreningu) REFERENCES Treningi(IDTreningu)
+                    NazwaCwiczenia TEXT,
+                    NazwaStanu TEXT,
+                    SredniCzasTrwania REAL,
+                    SredniaPoprawnosc REAL,
+                    FOREIGN KEY(IDTreningu) REFERENCES Treningi(IDTreningu) ON DELETE CASCADE
                 )
             ''')
             conn.commit()
 
-    def save_trening(self, trening_type: int, start_time: str, end_time: str,
-                     reps: list):
+def save_training(self, trening_type: int, start_time: str, end_time: str, 
+                     nazwa_cwiczenia: str, stats: dict):
         """
-        Zapisuje główny trening i automatycznie przypisuje do niego wszystkie ćwiczenia.
-
-        Args:
-            trening_type (int): 1 (Wspierany) lub 2 (Jednego elementu)
-            start_time (str): np. "15:30:00"
-            end_time (str): np. "15:45:00"
-            reps (list): Lista krotek np. [(1, 1), (2, 0), (3, 1)]
-                                format: (NrCwiczenia, StanCwiczenia)
+        Zapisuje główny trening i przypisuje uśrednione statystyki stanów ćwiczenia.
         """
         today_date = date.today().isoformat()
 
@@ -68,17 +53,25 @@ class DatabaseManager:
 
             trening_id = cursor.lastrowid
 
-            if trening_type == 1:
-                target_table = "TreningWspierany"
-            elif trening_type == 2:
-                target_table = "TreningJednegoElementu"
-            else:
-                raise ValueError(f"Nieznany rodzaj treningu: {trening_type}")
+            # Obliczanie i zapisywanie średnich wartości
+            for nazwa_stanu, (durations, correctness) in stats.items():
+                
+                # Zabezpieczenie: pomijamy stan, jeśli nie wykonano w nim żadnej poprawnej klatki
+                if len(durations) == 0 or len(correctness) == 0:
+                    continue
+                    
+                # Liczenie średniej
+                avg_duration = sum(durations) / len(durations)
+                avg_correctness = sum(correctness) / len(correctness)
 
-            for excercise, excercise_state in reps:
-                cursor.execute(f'''
-                    INSERT INTO {target_table} (IDTreningu, NrCwiczenia, StanCwiczenia)
-                    VALUES (?, ?, ?)
-                ''', (trening_id, excercise, excercise_state))
+                cursor.execute('''
+                    INSERT INTO StatystykiCwiczen 
+                    (IDTreningu, NazwaCwiczenia, NazwaStanu, SredniCzasTrwania, SredniaPoprawnosc)
+                    VALUES (?, ?, ?, ?, ?)
+                ''', (trening_id, nazwa_cwiczenia, nazwa_stanu, avg_duration, avg_correctness))
 
             conn.commit()
+            return trening_id
+        
+        
+        
