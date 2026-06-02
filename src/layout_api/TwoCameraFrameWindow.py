@@ -11,6 +11,8 @@ import cv2
 from kivy.core.window import Window
 from kivy.graphics import Color, RoundedRectangle
 from layout_api.components.RoundedButton import RoundedButton
+from layout_api.components.HoverableRoundedButton import HoverableRoundedButton
+
 import detection.excersises as Ex
 import detection.base_detection as Bd
 
@@ -21,10 +23,6 @@ class TwoCameraFrameWindow(Screen):
         super().__init__(**kwargs)
         self.landmarksFront = None
         self.landmarksSide = None
-
-        self.hover_start_frames = 0
-        self.hover_rest_frames = 0
-        self.HOVER_THRESHOLD = 30
 
         self.is_training_started = False  # Czy trening już się zaczął
         self.has_training_run = False  # Czy było start i potem stop (trening się zaczął i skończyć -> można go zapisać)
@@ -73,38 +71,38 @@ class TwoCameraFrameWindow(Screen):
 
     def _setup_base_buttons(self):
         """Metoda budująca wspólne przyciski treningowe (START i ZAPISZ)"""
-        self.btn_start = RoundedButton(
+        self.btn_start = HoverableRoundedButton(
             text="START",
             font_size='24sp',
             bg_color=(0, 0.7, 0, 1),
             radius=30,
+            hover_threshold=30,
             size_hint=(0.1, 0.07),
             pos_hint={'x': 0.02, 'y': 0.65}
         )
-        with self.btn_start.canvas.after:
-            self.start_color = Color(0, 1, 0, 0)
-            self.start_rect = RoundedRectangle(pos=self.btn_start.pos, size=(0, 0), radius=[10])
+        # Bindujemy normalnie akcję! Klasa przycisku wywoła to sama po zapełnieniu paska.
+        self.btn_start.bind(on_release=lambda x: self.on_base_start_click())
 
-        self.btn_save = RoundedButton(
+        self.btn_save = HoverableRoundedButton(
             text="ZAPISZ",
             font_size='24sp',
             bg_color=(0.4, 0.4, 0.4, 1),
             radius=30,
+            hover_threshold=30,
             size_hint=(0.1, 0.07),
             pos_hint={'x': 0.38, 'y': 0.65}
         )
-        with self.btn_save.canvas.after:
-            self.save_color = Color(0, 1, 0, 0)
-            self.save_rect = RoundedRectangle(pos=self.btn_save.pos, size=(0, 0), radius=[10])
+        self.btn_save.bind(on_release=lambda x: self.on_base_save_click())
 
-        self.add_ui_element(self.btn_start)
-        self.add_ui_element(self.btn_save)
+        self.ui_layer.add_widget(self.btn_start)
+        self.ui_layer.add_widget(self.btn_save)
 
     def handle_base_hover(self):
-        """Logika najeżdżania na bazowe przyciski z powiększonym marginesem błędu i płynnym cofaniem"""
+        """Czysta i czytelna logika przesyłania punktów do przycisków"""
         if not self.detector:
             return
 
+        # Zbierz punkty w formacie Kivy
         wrists = []
         for idx in [15, 17, 19, 16, 18, 20]:
             lm = self.detector.getLandmarkCords(idx)
@@ -113,61 +111,15 @@ class TwoCameraFrameWindow(Screen):
                 kivy_y = self.camera_view.y + ((1.0 - lm[1]) * self.camera_view.height)
                 wrists.append((kivy_x, kivy_y))
 
-        start_hovered = False
-        right_hovered = False
+        # Ograniczanie klikalności przycisku ZAPISZ
+        self.btn_save.is_hover_active = self.has_training_run and not self.is_training_started and not self.is_training_saved
 
-        can_save = self.has_training_run and not self.is_training_started and not self.is_training_saved
-
-        for x, y in wrists:
-            if hasattr(self, 'btn_start'):
-                if self.btn_start.collide_point(x, y):
-                    start_hovered = True
-
-            if hasattr(self, 'btn_save') and can_save:
-                if self.btn_save.collide_point(x, y):
-                    right_hovered = True
-
-        # --- LOGIKA START ---
-        if start_hovered:
-            if self.hover_start_frames >= 0:
-                self.hover_start_frames += 1
-                if self.hover_start_frames >= self.HOVER_THRESHOLD:
-                    self.on_base_start_click()
-                    self.hover_start_frames = -30
-        else:
-            if self.hover_start_frames > 0:
-                self.hover_start_frames -= 1
-
-        if self.hover_start_frames < 0:
-            self.hover_start_frames += 1
-
-        # --- LOGIKA ZAPISZ ---
-        if right_hovered:
-            if self.hover_rest_frames >= 0:
-                self.hover_rest_frames += 1
-                if self.hover_rest_frames >= self.HOVER_THRESHOLD:
-                    self.on_base_save_click()
-                    self.hover_rest_frames = -30
-        else:
-            if self.hover_rest_frames > 0:
-                self.hover_rest_frames -= 1
-
-        if self.hover_rest_frames < 0:
-            self.hover_rest_frames += 1
-
-        # --- AKTUALIZACJA PASKÓW ---
-        start_progress = max(0, self.hover_start_frames) / self.HOVER_THRESHOLD
-        right_progress = max(0, self.hover_rest_frames) / self.HOVER_THRESHOLD
-
-        if hasattr(self, 'start_rect'):
-            self.start_rect.pos = self.btn_start.pos
-            self.start_rect.size = (self.btn_start.width * start_progress, self.btn_start.height)
-            self.start_color.a = 0.5 if start_progress > 0 else 0
-
-        if hasattr(self, 'save_rect'):
-            self.save_rect.pos = self.btn_save.pos
-            self.save_rect.size = (self.btn_save.width * right_progress, self.btn_save.height)
-            self.save_color.a = 0.5 if right_progress > 0 else 0
+        # Przekaż punkty do przycisków – one same zajmą się resztą
+        if hasattr(self, 'btn_start'):
+            self.btn_start.process_hover(wrists)
+            
+        if hasattr(self, 'btn_save'):
+            self.btn_save.process_hover(wrists)
 
     # --- Metody do nadpisywania w klasach dziedziczących ---
     def on_base_start_click(self):
@@ -193,11 +145,6 @@ class TwoCameraFrameWindow(Screen):
             self.btn_save.text = "ZAPISANO"
             self.btn_save.bg_color = (0.6, 0, 0, 1)
 
-    def add_ui_element(self, widget):
-        self.ui_layer.add_widget(widget)
-
-    def remove_ui_element(self, widget):
-        self.ui_layer.remove_widget(widget)
 
     def set_title_text(self, text, color=(1, 1, 1, 1)):
         self.text_box.text = text
