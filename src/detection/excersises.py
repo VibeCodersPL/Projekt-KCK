@@ -73,12 +73,17 @@ class Exercise:
         self.__lastFramesCorrectnessMetricArray: list[bool] = [False] * self.__CORRECT_FRAMES
         self._currentStateName = "DEFAULT"
         self._states: dict[str, State] = {}
-        self._timeOfStateStart = time()
         self._states["DEFAULT"] = State()
         self._currentState = self._states.get("DEFAULT")
+        self._timeOfExcersiseStart = 0
+
+
         
+    def start_excersise(self):
         self._currentState.start()
-        self._timeOfStateStart = self._currentState.startTime
+        self._timeOfExcersiseStart = time()
+    def stop_excersise(self):
+        return time() - self._timeOfExcersiseStart
         
 
     def checkExcersise(self, landmarksFront = None, landmarksSide = None):
@@ -122,11 +127,6 @@ class Exercise:
                     isAllConditionsMet = False
                 else:
                     cond.conditionMet = True
-        
-        
-        
-        
-        
         
         if landmarksFront:
             evaluate_conditions(landmarksFront, self._currentState.conditonFront)
@@ -219,10 +219,6 @@ class Exercise:
 
         return stateName, (stateDuration - self.__CORRECT_FRAMES / self.__FRAMES_PER_SECOND)
 
-        
-    
-    
-    
     def getStateMessage(self):
         """returns state messege
 
@@ -244,6 +240,10 @@ class Exercise:
             output[k] = (v.durationStats,v.correctnessMetric)
             
         return output
+    
+    
+    
+    
     
 class LowReady(Exercise):
     def __init__(self):
