@@ -15,27 +15,29 @@ class TreningWspierany(TCFW):
         super().__init__(**kwargs)
         self.screenExcersise = ex.LowReady()
         self.screenExcersise.setState("START")
-        #odkomentować aby pominąć startowanie treningu
+        
         self.debug = True
         if self.debug:
-            self.is_training_started = True
+            self.screenExcersise.start_excersise()
 
     def update_frame(self, dt):
         
         super().update_frame(dt,False)
-        if self.is_training_started:
+        if self.screenExcersise and self.screenExcersise.is_running:
             #tutaj zwraca tuple (bool, bool) <- (czy jest dobrze wykonywana ta klatka, czy skonczył etap ćwiczenia)
             if self.debug:
                 print(self.screenExcersise.getStateMessage())
             
             is_pose_correct, isStateEnded = self.screenExcersise.checkExcersise(self.landmarksFront, self.landmarksSide)            
             
-            if self.debug:
-                if isStateEnded:
+            if isStateEnded:
+                self.screenExcersise.setState(None)
+                if self.debug:
                     print('zmieniam stan')
-                    self.screenExcersise.setState(None)
                     print(self.screenExcersise.getStateMessage())
                     print(self.screenExcersise.getEndStats())
+
+
                                 
             if is_pose_correct:
                 self.text_box.text = "DOBRZE!"
@@ -46,7 +48,7 @@ class TreningWspierany(TCFW):
                 self.text_box.text = "SKORYGUJ POSTAWE"
                 self.text_box.color = (1, 0.2, 0.2, 1)  # Czerwony
                     
-            
+            # Rysowanie na kamerze przedniej
             condFront, condSide = self.screenExcersise.getStateConditions()
             for cond in condFront:
                 if cond.conditionMet:
@@ -57,7 +59,7 @@ class TreningWspierany(TCFW):
                 self.frontFrame = self.detector.connectLandmarks(self.frontFrame,cond.landmarks[1],cond.landmarks[2],color)
                     
             self.camera_view.texture = self.frameToTexture(self.frontFrame)
-            
+            # Rysowanie na kamerze bocznej
             for cond in condSide:
                 if cond.conditionMet:
                     color = (0,255,0)
@@ -68,15 +70,15 @@ class TreningWspierany(TCFW):
                     
             self.camera_view2.texture = self.frameToTexture(self.sideFrame)
         
-        
+        # Jeśli trening jest zatrzymany, po prostu puszczamy czysty obraz z kamer
         else:
             self.camera_view.texture = self.frameToTexture(self.frontFrame)
             self.camera_view2.texture = self.frameToTexture(self.sideFrame)
             
-            if self.is_training_saved:
+            if self.screenExcersise and self.screenExcersise.is_saved:
                 self.text_box.text = "TRENING ZAPISANY"
                 self.text_box.color = (0.2, 0.6, 1, 1)  # Niebieski
-            elif self.has_training_run:
+            elif self.screenExcersise and self.screenExcersise.has_run:
                 self.text_box.text = "ZAKONCZONO - ZAPISZ TRENING"
                 self.text_box.color = (1, 0.8, 0, 1)  # Żółty
             else:
@@ -139,5 +141,10 @@ class TreningWspierany(TCFW):
     def confirm_exit(self, target_screen):
         self.exit_popup.dismiss()
         print("Trening przerwany. Ćwiczenie nie zostało zapisane.")
+        if self.screenExcersise:
+            self.screenExcersise.is_running = False
         self.manager.current = target_screen
         
+        
+    def on_base_save_click(self, training_type_int:int = 0):
+        return super().on_base_save_click(1)

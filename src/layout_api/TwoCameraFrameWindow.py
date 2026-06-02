@@ -15,6 +15,7 @@ from layout_api.components.HoverableRoundedButton import HoverableRoundedButton
 
 import detection.excersises as Ex
 import detection.base_detection as Bd
+import database.database_manager as DBM
 
 class TwoCameraFrameWindow(Screen):
     screenExcersise: Ex.Exercise = None
@@ -76,7 +77,6 @@ class TwoCameraFrameWindow(Screen):
             size_hint=(0.1, 0.07),
             pos_hint={'x': 0.02, 'y': 0.65}
         )
-        # Bindujemy normalnie akcję! Klasa przycisku wywoła to sama po zapełnieniu paska.
         self.btn_start.bind(on_release=lambda x: self.on_base_start_click())
 
         self.btn_save = HoverableRoundedButton(
@@ -98,7 +98,6 @@ class TwoCameraFrameWindow(Screen):
         if not self.detector:
             return
 
-        # Zbierz punkty w formacie Kivy
         wrists = []
         for idx in [15, 17, 19, 16, 18, 20]:
             lm = self.detector.getLandmarkCords(idx)
@@ -107,7 +106,6 @@ class TwoCameraFrameWindow(Screen):
                 kivy_y = self.camera_view.y + ((1.0 - lm[1]) * self.camera_view.height)
                 wrists.append((kivy_x, kivy_y))
 
-        # Ograniczanie klikalności przycisku ZAPISZ
         if self.screenExcersise:
             self.btn_save.is_hover_active = (self.screenExcersise.has_run and 
                                              not self.screenExcersise.is_running and 
@@ -119,12 +117,9 @@ class TwoCameraFrameWindow(Screen):
         if hasattr(self, 'btn_save'):
             self.btn_save.process_hover(wrists)
 
-    # --- Metody do nadpisywania w klasach dziedziczących ---
     def on_base_start_click(self):
-# Zabezpieczenie, gdyby obiekt ćwiczenia jeszcze nie istniał
         if not self.screenExcersise: return
 
-        # Klasa Exercise sama decyduje co zrobić (start/stop) i zwraca nam nowy stan
         is_now_running = self.screenExcersise.toggle_running()
 
         if is_now_running:
@@ -136,19 +131,40 @@ class TwoCameraFrameWindow(Screen):
             self.btn_start.text = "START"
             self.btn_start.bg_color = (0, 0.7, 0, 1)
 
-    def on_base_save_click(self):
+    def on_base_save_click(self, training_type_int:int = 0):
         if not self.screenExcersise: return
         
-        # Pobieramy stan zapisu bezpośrednio z klasy ćwiczenia
         can_save = self.screenExcersise.has_run and not self.screenExcersise.is_running and not self.screenExcersise.is_saved
         
         if can_save:
             print("Trening ZAPISANY!")
-            self.screenExcersise.mark_as_saved() # Oznaczamy w modelu, że zapisano
+            self.screenExcersise.mark_as_saved() 
             self.btn_save.text = "ZAPISANO"
             self.btn_save.bg_color = (0.6, 0, 0, 1)
             
-            # W TYM MIEJSCU wkleisz też swoją logikę bazy danych (np. db_manager.save_trening)
+            from datetime import datetime
+            import time
+            
+            current_time = datetime.now()
+            end_time_str = current_time.strftime("%H:%M:%S")
+            
+            start_timestamp = getattr(self.screenExcersise, '_timeOfExcersiseStart', time.time())
+            start_time_obj = datetime.fromtimestamp(start_timestamp)
+            start_time_str = start_time_obj.strftime("%H:%M:%S")
+            nazwa = self.screenExcersise._excersiseName
+            stats = self.screenExcersise.getEndStats()
+            
+            try:
+                trening_id = self.databaseManager.save_training(training_type_int, start_time_str, end_time_str, nazwa, stats)
+                print(f"Pomyślnie wstawiono rekord. ID Treningu: {trening_id}")
+            except Exception as e:
+                print(f"Błąd podczas zapisu do bazy danych: {e}")
+            
+            
+            
+            
+            
+            
 
 
     def set_title_text(self, text, color=(1, 1, 1, 1)):
@@ -160,6 +176,7 @@ class TwoCameraFrameWindow(Screen):
 
     def on_enter(self):
         self.detector:Bd.BaseDetection = self.manager.shared_detector
+        self.databaseManager:DBM.DatabaseManager = self.manager.shared_db_manager
         Clock.schedule_once(self._late_camera_init, 0.2)
 
     def _late_camera_init(self, dt):

@@ -18,11 +18,10 @@ class DatabaseManager:
                     DataWykonania DATE,
                     CzasRozpoczecia TIME,
                     CzasZakonczenia TIME,
-                    RodzajTreningu INTEGER #1 wspierany #2 pojedynczego elementu
+                    RodzajTreningu INTEGER 
                 )
-            ''')
+            ''')    # 1 wspierany #2 pojedynczego elementu
                 
-
             # Tabela pomocnicza:
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS StatystykiCwiczen (
@@ -36,7 +35,7 @@ class DatabaseManager:
             ''')
             conn.commit()
 
-def save_training(self, trening_type: int, start_time: str, end_time: str, 
+    def save_training(self, trening_type: int, start_time: str, end_time: str, 
                      nazwa_cwiczenia: str, stats: dict):
         """
         Zapisuje główny trening i przypisuje uśrednione statystyki stanów ćwiczenia.
@@ -53,10 +52,8 @@ def save_training(self, trening_type: int, start_time: str, end_time: str,
 
             trening_id = cursor.lastrowid
 
-            # Obliczanie i zapisywanie średnich wartości
             for nazwa_stanu, (durations, correctness) in stats.items():
                 
-                # Zabezpieczenie: pomijamy stan, jeśli nie wykonano w nim żadnej poprawnej klatki
                 if len(durations) == 0 or len(correctness) == 0:
                     continue
                     
@@ -72,6 +69,3 @@ def save_training(self, trening_type: int, start_time: str, end_time: str,
 
             conn.commit()
             return trening_id
-        
-        
-        

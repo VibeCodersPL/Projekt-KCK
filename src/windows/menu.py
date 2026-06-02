@@ -20,7 +20,7 @@ from detection.base_detection import *
 from windows.PostawaStojaca import *
 from windows.PostawaKleczaca import *
 from tts.tts import *
-
+from database.database_manager import *
 
 
 class MenuScreen(Screen):
@@ -152,6 +152,7 @@ class Menu(App):
         sm = ScreenManager(transition=NoTransition())
         sm.shared_detector = BaseDetection()
         sm.shared_tts = TTS()
+        sm.shared_db_manager = DatabaseManager()
         sm.add_widget(MenuScreen(name='menu'))
         sm.add_widget(TreningWspierany(name='Trening wspierany'))
         sm.add_widget(Trening_Jednego_Elementu(name='TreningJednegoElementu'))

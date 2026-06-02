@@ -79,6 +79,7 @@ class Exercise:
         self.is_running = False
         self.has_run = False
         self.is_saved = False
+        self._currentState.start()
 
 
         
