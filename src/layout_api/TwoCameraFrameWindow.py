@@ -19,6 +19,9 @@ class TwoCameraFrameWindow(Screen):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.detector_front = None
+        self.detector_side = None
+
         self.landmarksFront = None
         self.landmarksSide = None
 
@@ -102,12 +105,12 @@ class TwoCameraFrameWindow(Screen):
 
     def handle_base_hover(self):
         """Logika najeżdżania na bazowe przyciski z powiększonym marginesem błędu i płynnym cofaniem"""
-        if not self.detector:
+        if not self.detector_front:
             return
 
         wrists = []
         for idx in [15, 17, 19, 16, 18, 20]:
-            lm = self.detector.getLandmarkCords(idx)
+            lm = self.detector_front.getLandmarkCords(idx)
             if lm:
                 kivy_x = self.camera_view.x + (lm[0] * self.camera_view.width)
                 kivy_y = self.camera_view.y + ((1.0 - lm[1]) * self.camera_view.height)
@@ -207,12 +210,13 @@ class TwoCameraFrameWindow(Screen):
         self.manager.current = target_screen
 
     def on_enter(self):
-        self.detector:Bd.BaseDetection = self.manager.shared_detector
+        self.detector_front = self.manager.shared_detector_front
+        self.detector_side = self.manager.shared_detector_side
         Clock.schedule_once(self._late_camera_init, 0.2)
 
     def _late_camera_init(self, dt):
         self.cap = cv2.VideoCapture(0)
-        self.cap2 = cv2.VideoCapture(2)
+        self.cap2 = cv2.VideoCapture(1)
 
         if(not self.cap2 or not self.cap2.isOpened()):
            self.cap2 = self.cap 
@@ -222,36 +226,29 @@ class TwoCameraFrameWindow(Screen):
         else:
             print("Kamera nadal zablokowana przez system.")
 
-    def update_frame(self, dt, toTexture:bool = True):
-            if not self.cap or not self.cap.isOpened() and not self.cap2 or not self.cap2.isOpened():
-                return
+    def update_frame(self, dt, toTexture: bool = True):
+        if (not self.cap or not self.cap.isOpened()) and (not self.cap2 or not self.cap2.isOpened()):
+            return
 
-            self.handle_base_hover()
+        self.handle_base_hover()
 
-            if(self.cap.isOpened()):
-                self.frontFrame, self.landmarksFront = self.update_camera(self.cap)
-                if(toTexture):
-                    self.camera_view.texture = self.frameToTexture(self.frontFrame)
-                
-                
-                
-            if(self.cap2.isOpened()):
-                self.sideFrame, self.landmarksSide = self.update_camera(self.cap2)
-                if(toTexture):
-                    self.camera_view2.texture = self.frameToTexture(self.sideFrame)
-                
-                
+        if self.cap.isOpened():
+            self.frontFrame, self.landmarksFront = self.update_camera(self.cap, self.detector_front)
+            if toTexture and self.frontFrame is not None:
+                self.camera_view.texture = self.frameToTexture(self.frontFrame)
 
-                
-                
+        if self.cap2.isOpened():
+            self.sideFrame, self.landmarksSide = self.update_camera(self.cap2, self.detector_side)
+            if toTexture and self.sideFrame is not None:
+                self.camera_view2.texture = self.frameToTexture(self.sideFrame)
 
-    def update_camera(self, cap):
+    def update_camera(self, cap, detector):
         ret, frame = cap.read()
         if ret:
             frame = cv2.flip(frame, 1)
 
-            processed_frame, result = self.detector.process_frame(frame)
-            landmarks = self.detector.getLandmarks()
+            processed_frame, result = detector.process_frame(frame)
+            landmarks = detector.getLandmarks()
 
             return processed_frame, landmarks
 

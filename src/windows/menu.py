@@ -83,7 +83,7 @@ class MenuScreen(Screen):
         self.fill_rectangle = None
 
     def on_enter(self):
-        self.detector = self.manager.shared_detector
+        self.detector = self.manager.shared_detector_front
         Clock.schedule_once(self._late_camera_init, 0.2)
 
     def _late_camera_init(self, dt):
@@ -182,7 +182,8 @@ class Menu(App):
     def build(self):
         Window.fullscreen = 'auto'
         sm = ScreenManager(transition=NoTransition())
-        sm.shared_detector = BaseDetection()
+        sm.shared_detector_front = BaseDetection()
+        sm.shared_detector_side = BaseDetection()
         sm.shared_tts = TTS()
         sm.add_widget(MenuScreen(name='menu'))
         sm.add_widget(TreningWspierany(name='Trening wspierany'))

@@ -71,14 +71,14 @@ class Exercise:
         self.__frameCounter = 0
         self.__lastFramesCorrectnessArray: list[bool] = [False] * self.__CORRECT_FRAMES
         self.__lastFramesCorrectnessMetricArray: list[bool] = [False] * self.__CORRECT_FRAMES
-        self._currentStateName = "DEFAULT"
+        #self._currentStateName = "DEFAULT"
         self._states: dict[str, State] = {}
         self._timeOfStateStart = time()
-        self._states["DEFAULT"] = State()
-        self._currentState = self._states.get("DEFAULT")
+        #self._states["DEFAULT"] = State()
+        #self._currentState = self._states.get("DEFAULT")
         
-        self._currentState.start()
-        self._timeOfStateStart = self._currentState.startTime
+        #self._currentState.start()
+        #self._timeOfStateStart = self._currentState.startTime
         
 
     def checkExcersise(self, landmarksFront = None, landmarksSide = None):
@@ -254,9 +254,22 @@ class LowReady(Exercise):
         self._states["START"] = State(conditionFront=conditionList,conditionSide=conditionList, messege = "START")
         self._states["END"] = State(conditionFront=conditionList,conditionSide=conditionList, messege = "END")     
             
-        
 
+class StandingStance(Exercise):
+    def __init__(self):
+        super().__init__("StandingStance")
 
-    
+        conditionList = [Condition([12,14,16],180), #lewe ramie
+                         Condition([24,26,28], 150), #lewa noga
+                         Condition([23,25,27],150), #prawa noga
+                         Condition([23,11,0],170), #tułów
+                         Condition([23,11,13],30,1), #prawy łokieć
+                         Condition([11,13,15],50,2)] #prawa ręka
+        self._states["START"] = State(conditionFront=conditionList, conditionSide=conditionList, messege="START")
+        self._states["END"] = State(conditionFront=conditionList, conditionSide=conditionList, messege="END")
+
+        self._currentState = self._states.get("START")
+        self._currentState.start()
+        self._timeOfStateStart = self._currentState.startTime
            
            
