@@ -44,7 +44,7 @@ class WzorowyPokazScreen(Screen):
             color=(1, 1, 1, 1),
             bg_color=(0.15, 0.45, 0.85, 1),
             radius=30,
-            bg_image="../assets/Postawa1.png"
+            bg_image="./assets/Postawa1.png"
         )
         btn_stojaca.bind(on_press=self.change_screen)
         blocks_layout.add_widget(btn_stojaca)
@@ -56,7 +56,7 @@ class WzorowyPokazScreen(Screen):
             color=(1, 1, 1, 1),
             bg_color=(0.15, 0.45, 0.85, 1),
             radius=30,
-            bg_image="../assets/Postawa2.png"
+            bg_image="./assets/Postawa2.png"
         )
         btn_kleczaca.bind(on_press=self.change_screen)
         blocks_layout.add_widget(btn_kleczaca)
@@ -79,7 +79,7 @@ class WzorowyPokazScreen(Screen):
         root.add_widget(layout)
         self.add_widget(root)
         self.cursor = Image(
-            source='../assets/lapka1.png',
+            source='./assets/lapka1.png',
             size_hint=(None, None),
             size=(100, 100),
             pos=(-100, -100)
@@ -103,7 +103,7 @@ class WzorowyPokazScreen(Screen):
         self.fill_rectangle = None
 
     def on_enter(self):
-        self.detector = self.manager.shared_detector
+        self.detector = self.manager.shared_detector_front
         Clock.schedule_once(self._late_camera_init, 0.2)
 
     def _late_camera_init(self, dt):
@@ -125,7 +125,7 @@ class WzorowyPokazScreen(Screen):
         self.clean()
         self.button_hover = None
         self.cursor.pos = (-100, -100)
-        self.cursor.source = "../assets/lapka1.png"
+        self.cursor.source = "./assets/lapka1.png"
 
     def update_frame(self, dt):
         if not self.cap or not self.cap.isOpened():
@@ -155,7 +155,7 @@ class WzorowyPokazScreen(Screen):
                     self.clean()
                     self.button_hover = collision
                     self.button_hover_start = time.time()
-                    self.cursor.source = "../assets/lapka2.png"
+                    self.cursor.source = "./assets/lapka2.png"
                     with self.button_hover.canvas.after:
                         self.fill_color = Color(0.1, 0.8, 0.2, 0.5)
                         self.fill_rectangle = RoundedRectangle(
@@ -174,18 +174,18 @@ class WzorowyPokazScreen(Screen):
                             self.clean()
                             self.change_screen(collision)
                             self.button_hover = None
-                            self.cursor.source = "../assets/lapka1.png"
+                            self.cursor.source = "./assets/lapka1.png"
             else:
                 if self.button_hover is not None:
                     self.clean()
                     self.button_hover = None
-                    self.cursor.source = "../assets/lapka1.png"
+                    self.cursor.source = "./assets/lapka1.png"
         else:
             self.cursor.pos = (-100, -100)
             if self.button_hover is not None:
                 self.clean()
                 self.button_hover = None
-                self.cursor.source = "../assets/lapka1.png"
+                self.cursor.source = "./assets/lapka1.png"
 
     def change_screen(self, instance):
         target_screen = self.screen_mapping.get(instance.text)

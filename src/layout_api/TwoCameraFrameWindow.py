@@ -11,24 +11,22 @@ import cv2
 from kivy.core.window import Window
 from kivy.graphics import Color, RoundedRectangle
 from layout_api.components.RoundedButton import RoundedButton
+from layout_api.components.HoverableRoundedButton import HoverableRoundedButton
+
 import detection.excersises as Ex
 import detection.base_detection as Bd
+import database.database_manager as DBM
 
 class TwoCameraFrameWindow(Screen):
     screenExcersise: Ex.Exercise = None
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.detector_front = None
+        self.detector_side = None
+
         self.landmarksFront = None
         self.landmarksSide = None
-
-        self.hover_start_frames = 0
-        self.hover_rest_frames = 0
-        self.HOVER_THRESHOLD = 30
-
-        self.is_training_started = False  # Czy trening już się zaczął
-        self.has_training_run = False  # Czy było start i potem stop (trening się zaczął i skończyć -> można go zapisać)
-        self.is_training_saved = False  # Czy trening został już zapisany
 
         self.main_layout = FloatLayout()
 
@@ -73,131 +71,104 @@ class TwoCameraFrameWindow(Screen):
 
     def _setup_base_buttons(self):
         """Metoda budująca wspólne przyciski treningowe (START i ZAPISZ)"""
-        self.btn_start = RoundedButton(
+        self.btn_start = HoverableRoundedButton(
             text="START",
             font_size='24sp',
             bg_color=(0, 0.7, 0, 1),
             radius=30,
+            hover_threshold=30,
             size_hint=(0.1, 0.07),
             pos_hint={'x': 0.02, 'y': 0.65}
         )
-        with self.btn_start.canvas.after:
-            self.start_color = Color(0, 1, 0, 0)
-            self.start_rect = RoundedRectangle(pos=self.btn_start.pos, size=(0, 0), radius=[10])
+        self.btn_start.bind(on_release=lambda x: self.on_base_start_click())
 
-        self.btn_save = RoundedButton(
+        self.btn_save = HoverableRoundedButton(
             text="ZAPISZ",
             font_size='24sp',
             bg_color=(0.4, 0.4, 0.4, 1),
             radius=30,
+            hover_threshold=30,
             size_hint=(0.1, 0.07),
             pos_hint={'x': 0.38, 'y': 0.65}
         )
-        with self.btn_save.canvas.after:
-            self.save_color = Color(0, 1, 0, 0)
-            self.save_rect = RoundedRectangle(pos=self.btn_save.pos, size=(0, 0), radius=[10])
+        self.btn_save.bind(on_release=lambda x: self.on_base_save_click())
 
-        self.add_ui_element(self.btn_start)
-        self.add_ui_element(self.btn_save)
+        self.ui_layer.add_widget(self.btn_start)
+        self.ui_layer.add_widget(self.btn_save)
 
     def handle_base_hover(self):
         """Logika najeżdżania na bazowe przyciski z powiększonym marginesem błędu i płynnym cofaniem"""
-        if not self.detector:
+        if not self.detector_front:
             return
 
         wrists = []
         for idx in [15, 17, 19, 16, 18, 20]:
-            lm = self.detector.getLandmarkCords(idx)
+            lm = self.detector_front.getLandmarkCords(idx)
             if lm:
                 kivy_x = self.camera_view.x + (lm[0] * self.camera_view.width)
                 kivy_y = self.camera_view.y + ((1.0 - lm[1]) * self.camera_view.height)
                 wrists.append((kivy_x, kivy_y))
 
-        start_hovered = False
-        right_hovered = False
+        if self.screenExcersise:
+            self.btn_save.is_hover_active = (self.screenExcersise.has_run and 
+                                             not self.screenExcersise.is_running and 
+                                             not self.screenExcersise.is_saved)
+            
+        if hasattr(self, 'btn_start'):
+            self.btn_start.process_hover(wrists)
+            
+        if hasattr(self, 'btn_save'):
+            self.btn_save.process_hover(wrists)
 
-        can_save = self.has_training_run and not self.is_training_started and not self.is_training_saved
-
-        for x, y in wrists:
-            if hasattr(self, 'btn_start'):
-                if self.btn_start.collide_point(x, y):
-                    start_hovered = True
-
-            if hasattr(self, 'btn_save') and can_save:
-                if self.btn_save.collide_point(x, y):
-                    right_hovered = True
-
-        # --- LOGIKA START ---
-        if start_hovered:
-            if self.hover_start_frames >= 0:
-                self.hover_start_frames += 1
-                if self.hover_start_frames >= self.HOVER_THRESHOLD:
-                    self.on_base_start_click()
-                    self.hover_start_frames = -30
-        else:
-            if self.hover_start_frames > 0:
-                self.hover_start_frames -= 1
-
-        if self.hover_start_frames < 0:
-            self.hover_start_frames += 1
-
-        # --- LOGIKA ZAPISZ ---
-        if right_hovered:
-            if self.hover_rest_frames >= 0:
-                self.hover_rest_frames += 1
-                if self.hover_rest_frames >= self.HOVER_THRESHOLD:
-                    self.on_base_save_click()
-                    self.hover_rest_frames = -30
-        else:
-            if self.hover_rest_frames > 0:
-                self.hover_rest_frames -= 1
-
-        if self.hover_rest_frames < 0:
-            self.hover_rest_frames += 1
-
-        # --- AKTUALIZACJA PASKÓW ---
-        start_progress = max(0, self.hover_start_frames) / self.HOVER_THRESHOLD
-        right_progress = max(0, self.hover_rest_frames) / self.HOVER_THRESHOLD
-
-        if hasattr(self, 'start_rect'):
-            self.start_rect.pos = self.btn_start.pos
-            self.start_rect.size = (self.btn_start.width * start_progress, self.btn_start.height)
-            self.start_color.a = 0.5 if start_progress > 0 else 0
-
-        if hasattr(self, 'save_rect'):
-            self.save_rect.pos = self.btn_save.pos
-            self.save_rect.size = (self.btn_save.width * right_progress, self.btn_save.height)
-            self.save_color.a = 0.5 if right_progress > 0 else 0
-
-    # --- Metody do nadpisywania w klasach dziedziczących ---
     def on_base_start_click(self):
-        self.is_training_started = not self.is_training_started
+        if not self.screenExcersise: return
 
-        if self.is_training_started:
-            print("Trening ROZPOCZĘTY!)")
-            self.has_training_run = False
-            self.is_training_saved = False
+        is_now_running = self.screenExcersise.toggle_running()
+
+        if is_now_running:
+            print("Trening ROZPOCZĘTY!")
             self.btn_start.text = "STOP"
             self.btn_start.bg_color = (0.8, 0, 0, 1)
         else:
             print("Trening ZATRZYMANY!")
-            self.has_training_run = True
             self.btn_start.text = "START"
             self.btn_start.bg_color = (0, 0.7, 0, 1)
 
-    def on_base_save_click(self):
-        can_save = self.has_training_run and not self.is_training_started and not self.is_training_saved
+    def on_base_save_click(self, training_type_int:int = 0):
+        if not self.screenExcersise: return
+        
+        can_save = self.screenExcersise.has_run and not self.screenExcersise.is_running and not self.screenExcersise.is_saved
+        
         if can_save:
             print("Trening ZAPISANY!")
-            self.is_training_saved = True
+            self.screenExcersise.mark_as_saved() 
             self.btn_save.text = "ZAPISANO"
             self.btn_save.bg_color = (0.6, 0, 0, 1)
+            
+            from datetime import datetime
+            import time
+            
+            current_time = datetime.now()
+            end_time_str = current_time.strftime("%H:%M:%S")
+            
+            start_timestamp = getattr(self.screenExcersise, '_timeOfExcersiseStart', time.time())
+            start_time_obj = datetime.fromtimestamp(start_timestamp)
+            start_time_str = start_time_obj.strftime("%H:%M:%S")
+            nazwa = self.screenExcersise._excersiseName
+            stats = self.screenExcersise.getEndStats()
+            
+            try:
+                trening_id = self.databaseManager.save_training(training_type_int, start_time_str, end_time_str, nazwa, stats)
+                print(f"Pomyślnie wstawiono rekord. ID Treningu: {trening_id}")
+            except Exception as e:
+                print(f"Błąd podczas zapisu do bazy danych: {e}")
+            
+            
+            
+            
+            
+            
 
-    def add_ui_element(self, widget):
-        self.ui_layer.add_widget(widget)
-
-    def remove_ui_element(self, widget):
-        self.ui_layer.remove_widget(widget)
 
     def set_title_text(self, text, color=(1, 1, 1, 1)):
         self.text_box.text = text
@@ -207,12 +178,14 @@ class TwoCameraFrameWindow(Screen):
         self.manager.current = target_screen
 
     def on_enter(self):
-        self.detector:Bd.BaseDetection = self.manager.shared_detector
+        self.detector_front = self.manager.shared_detector_front
+        self.detector_side = self.manager.shared_detector_side
+        self.databaseManager:DBM.DatabaseManager = self.manager.shared_db_manager
         Clock.schedule_once(self._late_camera_init, 0.2)
 
     def _late_camera_init(self, dt):
         self.cap = cv2.VideoCapture(0)
-        self.cap2 = cv2.VideoCapture(2)
+        self.cap2 = cv2.VideoCapture(1)
 
         if(not self.cap2 or not self.cap2.isOpened()):
            self.cap2 = self.cap 
@@ -222,36 +195,29 @@ class TwoCameraFrameWindow(Screen):
         else:
             print("Kamera nadal zablokowana przez system.")
 
-    def update_frame(self, dt, toTexture:bool = True):
-            if not self.cap or not self.cap.isOpened() and not self.cap2 or not self.cap2.isOpened():
-                return
+    def update_frame(self, dt, toTexture: bool = True):
+        if (not self.cap or not self.cap.isOpened()) and (not self.cap2 or not self.cap2.isOpened()):
+            return
 
-            self.handle_base_hover()
+        self.handle_base_hover()
 
-            if(self.cap.isOpened()):
-                self.frontFrame, self.landmarksFront = self.update_camera(self.cap)
-                if(toTexture):
-                    self.camera_view.texture = self.frameToTexture(self.frontFrame)
-                
-                
-                
-            if(self.cap2.isOpened()):
-                self.sideFrame, self.landmarksSide = self.update_camera(self.cap2)
-                if(toTexture):
-                    self.camera_view2.texture = self.frameToTexture(self.sideFrame)
-                
-                
+        if self.cap.isOpened():
+            self.frontFrame, self.landmarksFront = self.update_camera(self.cap, self.detector_front)
+            if toTexture and self.frontFrame is not None:
+                self.camera_view.texture = self.frameToTexture(self.frontFrame)
 
-                
-                
+        if self.cap2.isOpened():
+            self.sideFrame, self.landmarksSide = self.update_camera(self.cap2, self.detector_side)
+            if toTexture and self.sideFrame is not None:
+                self.camera_view2.texture = self.frameToTexture(self.sideFrame)
 
-    def update_camera(self, cap):
+    def update_camera(self, cap, detector):
         ret, frame = cap.read()
         if ret:
             frame = cv2.flip(frame, 1)
 
-            processed_frame, result = self.detector.process_frame(frame)
-            landmarks = self.detector.getLandmarks()
+            processed_frame, result = detector.process_frame(frame)
+            landmarks = detector.getLandmarks()
 
             return processed_frame, landmarks
 

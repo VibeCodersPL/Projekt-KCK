@@ -15,12 +15,12 @@ from kivy.clock import Clock
 from windows.Trening_Wspierany import *
 from windows.Wzorowy_Pokaz import *
 from windows.Trening_Jednego_Elementu import *
-from layout_api.components.RoundedButton import *
+from layout_api.components.HoverableRoundedButton import *
 from detection.base_detection import *
 from windows.PostawaStojaca import *
 from windows.PostawaKleczaca import *
 from tts.tts import *
-
+from database.database_manager import *
 
 
 class MenuScreen(Screen):
@@ -43,7 +43,7 @@ class MenuScreen(Screen):
         }
         self.menu_buttons = []
         for mode in self.screen_mapping.keys():
-            button = RoundedButton(
+            button = HoverableRoundedButton(
                 text=mode,
                 font_size='26sp',
                 color=(1, 1, 1, 1),
@@ -67,23 +67,10 @@ class MenuScreen(Screen):
         self.detector = None
         self.cap = None
         self.update = None
-        self.button_hover = None
-        self.button_hover_start = None
-        self.fill_color = None
-        self.fill_rectangle = None
 
-
-    def clean(self):
-        if self.button_hover and self.fill_color and self.fill_rectangle:
-            if self.fill_color in self.button_hover.canvas.after.children:
-                self.button_hover.canvas.after.remove(self.fill_color)
-            if self.fill_rectangle in self.button_hover.canvas.after.children:
-                self.button_hover.canvas.after.remove(self.fill_rectangle)
-        self.fill_color = None
-        self.fill_rectangle = None
 
     def on_enter(self):
-        self.detector = self.manager.shared_detector
+        self.detector = self.manager.shared_detector_front
         Clock.schedule_once(self._late_camera_init, 0.2)
 
     def _late_camera_init(self, dt):
@@ -105,85 +92,68 @@ class MenuScreen(Screen):
         self.detector = None
 
         
-
-        self.clean()
-        self.button_hover = None
-        self.cursor.pos=(-100,-100)
+        self.cursor.pos = (-100, -100)
         self.cursor.source = "./assets/lapka1.png"
+        for button in self.menu_buttons:
+            button.process_hover([])
  
 
 
-    def update_frame(self,dt):
+    def update_frame(self, dt):
         if not self.cap or not self.cap.isOpened():
             return
 
         temp, frame = self.cap.read()
         if not temp:
             return
+            
         frame = cv2.flip(frame, 1)
         _, result = self.detector.process_frame(frame)
-        cursor_pos = None
-        cursor_pos = self.detector.getLandmarkCords(19);
+        cursor_pos = self.detector.getLandmarkCords(19)
 
         if cursor_pos is not None:
             x, y = cursor_pos
             win_x = x * Window.width
-            win_y = (1-y) * Window.height
+            win_y = (1 - y) * Window.height
             self.cursor.pos = (win_x - self.cursor.width / 2, win_y - self.cursor.height / 2)
-            collision = None
+            
+            is_any_hovered = False
+            point = [(win_x, win_y)]
+
             for button in self.menu_buttons:
+                # przekazujemy punkt do przycisku
+                button.process_hover(point)
+                
+                # sprawdzamy, czy musimy zmienić ikonę łapki
                 if button.collide_point(win_x, win_y):
-                    collision = button
-                    break
+                    is_any_hovered = True
 
-            if collision:
-                if self.button_hover != collision:
-                    self.clean()
-                    self.button_hover = collision
-                    self.button_hover_start = time.time()
-                    self.cursor.source = "./assets/lapka2.png"
-                    with self.button_hover.canvas.after:
-                        self.fill_color = Color(0.1,0.8,0.2,0.5)
-                        self.fill_rectangle = RoundedRectangle(
-                            pos=self.button_hover.pos,
-                            size=(self.button_hover.width,0),
-                            radius=[30,30,30,30],
-                        )
-                else:
-                    elapsed_time = time.time() - self.button_hover_start
-                    progress = min(1.0,elapsed_time/2.0)
-                    if self.fill_rectangle:
-                        new_height  = self.button_hover.height * progress
-                        self.fill_rectangle.size = (self.button_hover.width,new_height)
-
-                        if elapsed_time > 2.0:
-                            self.clean()
-                            self.change_screen(collision)
-                            self.button_hover = None
-                            self.cursor.source = "./assets/lapka1.png"
+            # Aktualizacja wyglądu kursora
+            if is_any_hovered:
+                self.cursor.source = "./assets/lapka2.png"
             else:
-                if self.button_hover is not None:
-                    self.clean()
-                    self.button_hover = None
-                    self.cursor.source = "./assets/lapka1.png"
-        else:
-            self.cursor.pos = (-100,-100)
-            if self.button_hover is not None:
-                self.clean()
-                self.button_hover = None
                 self.cursor.source = "./assets/lapka1.png"
-
+                
+        else:
+            # ręka zniknęła z kamery: chowamy kursor i informujemy przyciski, by wycofały paski
+            self.cursor.pos = (-100, -100)
+            self.cursor.source = "./assets/lapka1.png"
+            for button in self.menu_buttons:
+                button.process_hover([])
+                
     def change_screen(self, instance):
         target_screen = self.screen_mapping.get(instance.text)
         if target_screen:
             self.manager.current = target_screen
-
+                
 class Menu(App):
     def build(self):
         Window.fullscreen = 'auto'
         sm = ScreenManager(transition=NoTransition())
-        sm.shared_detector = BaseDetection()
+        sm.shared_detector_front = BaseDetection()
+        sm.shared_detector_side = BaseDetection()
         sm.shared_tts = TTS()
+        sm.shared_db_manager = DatabaseManager()
         sm.add_widget(MenuScreen(name='menu'))
         sm.add_widget(TreningWspierany(name='Trening wspierany'))
         sm.add_widget(Trening_Jednego_Elementu(name='TreningJednegoElementu'))

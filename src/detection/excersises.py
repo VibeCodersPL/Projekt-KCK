@@ -71,14 +71,41 @@ class Exercise:
         self.__frameCounter = 0
         self.__lastFramesCorrectnessArray: list[bool] = [False] * self.__CORRECT_FRAMES
         self.__lastFramesCorrectnessMetricArray: list[bool] = [False] * self.__CORRECT_FRAMES
-        self._currentStateName = "DEFAULT"
+        #self._currentStateName = "DEFAULT"
         self._states: dict[str, State] = {}
-        self._timeOfStateStart = time()
         self._states["DEFAULT"] = State()
         self._currentState = self._states.get("DEFAULT")
-        
+        self._timeOfExcersiseStart = 0
+        self.is_running = False
+        self.has_run = False
+        self.is_saved = False
         self._currentState.start()
-        self._timeOfStateStart = self._currentState.startTime
+
+
+        
+    def start_excersise(self):
+        self.is_running = True
+        self.has_run = False
+        self.is_saved = False
+        self._currentState.start()
+        self._timeOfExcersiseStart = time()
+        
+        
+    def stop_excersise(self):
+        self.is_running = False
+        self.has_run = True
+        return time() - self._timeOfExcersiseStart
+        
+    def toggle_running(self) -> bool:
+        """Przełącza stan ćwiczenia. Zwraca True jeśli wystartowało, False jeśli zatrzymano."""
+        if self.is_running:
+            self.stop_excersise()
+        else:
+            self.start_excersise()
+        return self.is_running
+        
+    def mark_as_saved(self):
+        self.is_saved = True
         
 
     def checkExcersise(self, landmarksFront = None, landmarksSide = None):
@@ -122,11 +149,6 @@ class Exercise:
                     isAllConditionsMet = False
                 else:
                     cond.conditionMet = True
-        
-        
-        
-        
-        
         
         if landmarksFront:
             evaluate_conditions(landmarksFront, self._currentState.conditonFront)
@@ -219,10 +241,6 @@ class Exercise:
 
         return stateName, (stateDuration - self.__CORRECT_FRAMES / self.__FRAMES_PER_SECOND)
 
-        
-    
-    
-    
     def getStateMessage(self):
         """returns state messege
 
@@ -245,6 +263,10 @@ class Exercise:
             
         return output
     
+    
+    
+    
+    
 class LowReady(Exercise):
     def __init__(self):
         super().__init__("LowReady")
@@ -254,9 +276,22 @@ class LowReady(Exercise):
         self._states["START"] = State(conditionFront=conditionList,conditionSide=conditionList, messege = "START")
         self._states["END"] = State(conditionFront=conditionList,conditionSide=conditionList, messege = "END")     
             
-        
 
+class StandingStance(Exercise):
+    def __init__(self):
+        super().__init__("StandingStance")
 
-    
+        conditionList = [Condition([12,14,16],180), #lewe ramie
+                         Condition([24,26,28], 150), #lewa noga
+                         Condition([23,25,27],150), #prawa noga
+                         Condition([23,11,0],170), #tułów
+                         Condition([23,11,13],30,1), #prawy łokieć
+                         Condition([11,13,15],50,2)] #prawa ręka
+        self._states["START"] = State(conditionFront=conditionList, conditionSide=conditionList, messege="START")
+        self._states["END"] = State(conditionFront=conditionList, conditionSide=conditionList, messege="END")
+
+        self._currentState = self._states.get("START")
+        self._currentState.start()
+        self._timeOfStateStart = self._currentState.startTime
            
            
