@@ -21,6 +21,7 @@ from windows.PostawaStojaca import *
 from windows.PostawaKleczaca import *
 from tts.tts import *
 from database.database_manager import *
+from windows.Statystyki import *
 
 
 class MenuScreen(Screen):
@@ -160,6 +161,7 @@ class Menu(App):
         sm.add_widget(WzorowyPokazScreen(name='WzorowyPokaz'))
         sm.add_widget(PostawaStojaca(name='PostawaStojaca'))
         sm.add_widget(PostawaKleczaca(name='PostawaKleczaca'))
+        sm.add_widget(Statystyki(name='Statystyki'))
         return sm
 
 
