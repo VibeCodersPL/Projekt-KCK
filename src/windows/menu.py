@@ -21,13 +21,14 @@ from windows.PostawaStojaca import *
 from windows.PostawaKleczaca import *
 from tts.tts import *
 from database.database_manager import *
+from windows.Statystyki import *
 
 
 class MenuScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         wid = Widget()
-        layout = BoxLayout(orientation='vertical', size_hint=(None, None), size=(350, 320), spacing=20)
+        layout = BoxLayout(orientation='vertical', size_hint=(None, None), size=(350, 380), spacing=20)
         main_text = Label(
             text='Cyber-Trener',
             font_size='32sp',
@@ -39,7 +40,8 @@ class MenuScreen(Screen):
         self.screen_mapping = {
             'Trening wspierany': 'Trening wspierany',
             'Trening jednego elementu': 'TreningJednegoElementu',
-            'Wzorowy pokaz': 'WzorowyPokaz'
+            'Wzorowy pokaz': 'WzorowyPokaz',
+            'Statystyki': 'Statystyki'
         }
         self.menu_buttons = []
         for mode in self.screen_mapping.keys():
@@ -160,6 +162,7 @@ class Menu(App):
         sm.add_widget(WzorowyPokazScreen(name='WzorowyPokaz'))
         sm.add_widget(PostawaStojaca(name='PostawaStojaca'))
         sm.add_widget(PostawaKleczaca(name='PostawaKleczaca'))
+        sm.add_widget(Statystyki(name='Statystyki'))
         return sm
 
 
