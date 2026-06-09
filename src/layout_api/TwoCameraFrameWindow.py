@@ -184,8 +184,8 @@ class TwoCameraFrameWindow(Screen):
         Clock.schedule_once(self._late_camera_init, 0.2)
 
     def _late_camera_init(self, dt):
-        self.cap = cv2.VideoCapture(0)
-        self.cap2 = cv2.VideoCapture(1)
+        self.cap = cv2.VideoCapture(1)
+        self.cap2 = cv2.VideoCapture(0)
 
         if(not self.cap2 or not self.cap2.isOpened()):
            self.cap2 = self.cap 
