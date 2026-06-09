@@ -8,7 +8,6 @@ from kivy.uix.popup import Popup
 from layout_api.TwoCameraFrameWindow import TwoCameraFrameWindow as TCFW
 from layout_api.components.RoundedButton import *
 import detection.excersises as ex
-from detection.excersises import Condition, State
 
 class TreningWspierany(TCFW):
     def __init__(self, **kwargs):
@@ -58,7 +57,6 @@ class TreningWspierany(TCFW):
                 self.frontFrame = self.detector_front.connectLandmarks(self.frontFrame,cond.landmarks[0],cond.landmarks[1],color)
                 self.frontFrame = self.detector_front.connectLandmarks(self.frontFrame,cond.landmarks[1],cond.landmarks[2],color)
                     
-            self.camera_view.texture = self.frameToTexture(self.frontFrame)
             # Rysowanie na kamerze bocznej
             for cond in condSide:
                 if cond.conditionMet:
@@ -67,13 +65,9 @@ class TreningWspierany(TCFW):
                     color = (0,0,255)
                 self.sideFrame = self.detector_side.connectLandmarks(self.sideFrame,cond.landmarks[0],cond.landmarks[1],color)
                 self.sideFrame = self.detector_side.connectLandmarks(self.sideFrame,cond.landmarks[1],cond.landmarks[2],color)
-                    
-            self.camera_view2.texture = self.frameToTexture(self.sideFrame)
-        
-        # Jeśli trening jest zatrzymany, po prostu puszczamy czysty obraz z kamer
+                            
         else:
-            self.camera_view.texture = self.frameToTexture(self.frontFrame)
-            self.camera_view2.texture = self.frameToTexture(self.sideFrame)
+
             
             if self.screenExcersise and self.screenExcersise.is_saved:
                 self.text_box.text = "TRENING ZAPISANY"
@@ -84,7 +78,9 @@ class TreningWspierany(TCFW):
             else:
                 self.text_box.text = "ROZPOCZNIJ CWICZENIE"
                 self.text_box.color = (1, 1, 1, 1)  # Biały
-                
+        
+        self.camera_view.texture = self.frameToTexture(self.frontFrame)
+        self.camera_view2.texture = self.frameToTexture(self.sideFrame)                
         
 
     def change_screen(self, target_screen, instance):
@@ -135,7 +131,6 @@ class TreningWspierany(TCFW):
         btn_no.bind(on_press=self.exit_popup.dismiss)
 
         self.exit_popup.open()
-
 
 
     def confirm_exit(self, target_screen):
