@@ -66,9 +66,10 @@ class PostawaKleczaca(Screen):
         self.speak_event = Clock.schedule_once(self.speak_phrases, 2)
 
     def speak_phrases(self, dt):
-        fraza = self.phrases.get("WzorowyPokazKleczaca")
-        if fraza:
-            self.tts.speak(fraza)
+        caly_tekst = self.phrases.get("WzorowyPokazKleczaca", [])
+        for tekst in caly_tekst:
+            if tekst.strip():
+                self.tts.speak(tekst)
 
     def _late_camera_init(self, dt):
         self.cap = cv2.VideoCapture(0)
@@ -81,7 +82,7 @@ class PostawaKleczaca(Screen):
         if self.speak_event:
             self.speak_event.cancel()
         if self.tts:
-            self.tts.stop()
+            self.tts.interrupt()
         if self.update:
             self.update.cancel()
             self.update = None

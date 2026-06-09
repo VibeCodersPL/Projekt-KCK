@@ -209,3 +209,5 @@ __marimo__/
 
 # baza
 *.db
+#tts
+*.mp3

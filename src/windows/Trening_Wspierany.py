@@ -37,7 +37,7 @@ class TreningWspierany(TCFW):
             is_pose_correct, isStateEnded = self.screenExcersise.checkExcersise(self.landmarksFront, self.landmarksSide)            
             
             if isStateEnded:
-                self.screenExcersise.setState(None)
+                #self.screenExcersise.setState(None)
                 if self.debug:
                     print('zmieniam stan')
                     print(self.screenExcersise.getStateMessage())
