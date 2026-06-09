@@ -1,10 +1,19 @@
 import math
 from typing import List
 from time import time
+import json
+from tts.tts import *
+from pathlib import Path
 
+def load_json():
+    JSON_PATH = Path(__file__).resolve().parents[1] / "tts" / "phrases.json"
+    with open(JSON_PATH, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+tts_messages = load_json()
 
 class Condition:
-    def __init__(self, landmarks: List[int] = [11,13,15], degree: int = 160, tolerance: int = 0.3, conditionMet:bool = True):
+    def __init__(self, landmarks: List[int] = [11,13,15], degree: int = 160, tolerance: int = 0.3, conditionMet:bool = True, message:str = "Skoryguj postawę"):
         """Representation of one condition of excersise 
 
         Args:
@@ -16,6 +25,7 @@ class Condition:
         self.degree = degree
         self.tolerance = tolerance
         self.conditionMet = conditionMet
+        self.message = message
 
 
 class State:
@@ -281,12 +291,19 @@ class StandingStance(Exercise):
     def __init__(self):
         super().__init__("StandingStance")
 
-        conditionList = [Condition([12,14,16],180), #lewe ramie
-                         Condition([24,26,28], 150), #lewa noga
-                         Condition([23,25,27],150), #prawa noga
+        messages = tts_messages.get("CwiczenieStojaca",[])
+
+        def get_message(message_number, default = "Skoryguj postawę"):
+            if message_number < len(messages):
+                return messages[message_number]
+            return default
+
+        conditionList = [Condition([12,14,16],180, message = get_message(2)), #lewe ramie #boczna
+                         Condition([24,26,28], 150, message = get_message(0)), #lewa noga
+                         Condition([23,25,27],150, message = get_message(0)), #prawa noga
                          Condition([23,11,0],170), #tułów
-                         Condition([23,11,13],30,1), #prawy łokieć
-                         Condition([11,13,15],50,2)] #prawa ręka
+                         Condition([23,11,13],30,1, message = get_message(1)), #prawy łokieć
+                         Condition([11,13,15],50,2, message = get_message(3))] #prawa ręka #boczna
         self._states["START"] = State(conditionFront=conditionList, conditionSide=conditionList, messege="START")
         self._states["END"] = State(conditionFront=conditionList, conditionSide=conditionList, messege="END")
 
