@@ -291,23 +291,57 @@ class StandingStance(Exercise):
     def __init__(self):
         super().__init__("StandingStance")
 
-        messages = tts_messages.get("CwiczenieStojaca",[])
+        messages = tts_messages.get("CwiczenieStojaca", [])
 
-        def get_message(message_number, default = "Skoryguj postawę"):
+        def get_message(message_number, default="Skoryguj postawę"):
             if message_number < len(messages):
                 return messages[message_number]
             return default
 
-        conditionList = [Condition([12,14,16],180, message = get_message(2)), #lewe ramie #boczna
-                         Condition([24,26,28], 150, message = get_message(0)), #lewa noga
-                         Condition([23,25,27],150, message = get_message(0)), #prawa noga
-                         Condition([23,11,0],170), #tułów
-                         Condition([23,11,13],30,1, message = get_message(1)), #prawy łokieć
-                         Condition([11,13,15],50,2, message = get_message(3))] #prawa ręka #boczna
-        self._states["START"] = State(conditionFront=conditionList, conditionSide=conditionList, messege="START")
-        self._states["END"] = State(conditionFront=conditionList, conditionSide=conditionList, messege="END")
+        legs_front = [
+            Condition([24, 26, 28], degree=155, tolerance=0.15, message=get_message(0)),  # Lewe kolano
+            Condition([23, 25, 27], degree=155, tolerance=0.15, message=get_message(0))   # Prawe kolano
+        ]
+        legs_side = [
+            Condition([24, 26, 28], degree=145, tolerance=0.15, message="Zegnij mocniej kolana (widok z boku)")
+        ]
 
-        self._currentState = self._states.get("START")
+        torso_front = [
+            Condition([12, 24, 26], degree=170, tolerance=0.1, message="Ustaw tułów frontalnie"), 
+            Condition([11, 23, 25], degree=170, tolerance=0.1, message="Ustaw tułów frontalnie")
+        ]
+        torso_side = [
+        ]
+
+
+        arms_front = [
+            Condition([11, 13, 15], degree=60, tolerance=0.3, message=get_message(3)),    # Prawy łokieć
+            Condition([23, 11, 13], degree=30, tolerance=0.5, message=get_message(1))     # Prawy bark / odwiedzenie
+        ]
+        arms_side = [
+            Condition([12, 14, 16], degree=165, tolerance=0.15, message=get_message(2)),  # Lewy łokieć (prawie prosty)
+            Condition([24, 12, 14], degree=85, tolerance=0.2, message="Skoryguj wysokość uniesienia broni")  # Lewy bark
+        ]
+
+        self._states["Legs"] = State(
+            conditionFront=legs_front,
+            conditionSide=legs_side,
+            messege="Skoncentruj się na nogach i ugięciu kolan."
+        )
+
+        self._states["LegsTorso"] = State(
+            conditionFront=legs_front + torso_front,
+            conditionSide=legs_side + torso_side,
+            messege="Dobrze, teraz wyprostuj i pochyl lekko tułów."
+        )
+
+        self._states["LegsTorsoArms"] = State(
+            conditionFront=legs_front + torso_front + arms_front,
+            conditionSide=legs_side + torso_side + arms_side,
+            messege="Złóż się do strzału. Zablokuj ramiona w ramie."
+        )
+
+        self._currentState = self._states.get("Legs")
         self._currentState.start()
         self._timeOfStateStart = self._currentState.startTime
            

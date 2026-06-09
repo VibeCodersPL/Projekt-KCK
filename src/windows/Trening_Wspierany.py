@@ -16,8 +16,6 @@ class TreningWspierany(TCFW):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.screenExcersise = ex.StandingStance()
-        self.screenExcersise.setState("START")
-
         self.tts = TTS()
         self.last_tts_message = 0
         self.tts_time = 4
@@ -83,7 +81,6 @@ class TreningWspierany(TCFW):
                     self.tts.speak(message)
                     self.last_tts_message = current_time
         
-        # Jeśli trening jest zatrzymany, po prostu puszczamy czysty obraz z kamer
         else:
 
             
