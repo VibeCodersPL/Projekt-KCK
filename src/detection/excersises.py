@@ -2,7 +2,7 @@ import math
 from typing import List
 from time import time
 import json
-from tts.tts import *
+from tts.tts import TTS
 from pathlib import Path
 
 def load_json():
