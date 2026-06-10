@@ -25,8 +25,15 @@ class TwoCameraFrameWindow(Screen):
         self.detector_front = None
         self.detector_side = None
 
-        self.landmarksFront = None
-        self.landmarksSide = None
+        self.landmarksFront = []
+        self.landmarksSide = []
+        
+        # ZABEZPIECZENIE: Zmienne zainicjowane z góry
+        self.frontFrame = None
+        self.sideFrame = None
+        self.cap = None
+        self.cap2 = None
+        self.update_event = None
 
         self.main_layout = FloatLayout()
 
@@ -39,7 +46,6 @@ class TwoCameraFrameWindow(Screen):
 
         self.ui_layer = FloatLayout()
 
-        btn = Button(text="Powrot do Menu", size_hint=(None, None), size=(200, 50))
         btn = RoundedButton(
             text="Powrót do menu",
             font_size='16sp',
@@ -162,13 +168,6 @@ class TwoCameraFrameWindow(Screen):
                 print(f"Pomyślnie wstawiono rekord. ID Treningu: {trening_id}")
             except Exception as e:
                 print(f"Błąd podczas zapisu do bazy danych: {e}")
-            
-            
-            
-            
-            
-            
-
 
     def set_title_text(self, text, color=(1, 1, 1, 1)):
         self.text_box.text = text
@@ -184,8 +183,8 @@ class TwoCameraFrameWindow(Screen):
         Clock.schedule_once(self._late_camera_init, 0.2)
 
     def _late_camera_init(self, dt):
-        self.cap = cv2.VideoCapture(0)
-        self.cap2 = cv2.VideoCapture(2)
+        self.cap = cv2.VideoCapture(1)
+        self.cap2 = cv2.VideoCapture(0)
 
         if(not self.cap2 or not self.cap2.isOpened()):
            self.cap2 = self.cap 
@@ -193,7 +192,7 @@ class TwoCameraFrameWindow(Screen):
         if self.cap.isOpened() or self.cap2.isOpened():
             self.update_event = Clock.schedule_interval(self.update_frame, 1/30)
         else:
-            print("Kamera nadal zablokowana przez system.")
+            print("Kamera zablokowana przez system lub niedostępna.")
 
     def update_frame(self, dt, toTexture: bool = True):
         if (not self.cap or not self.cap.isOpened()) and (not self.cap2 or not self.cap2.isOpened()):
@@ -201,12 +200,12 @@ class TwoCameraFrameWindow(Screen):
 
         self.handle_base_hover()
 
-        if self.cap.isOpened():
+        if self.cap and self.cap.isOpened():
             self.frontFrame, self.landmarksFront = self.update_camera(self.cap, self.detector_front)
             if toTexture and self.frontFrame is not None:
                 self.camera_view.texture = self.frameToTexture(self.frontFrame)
 
-        if self.cap2.isOpened():
+        if self.cap2 and self.cap2.isOpened():
             self.sideFrame, self.landmarksSide = self.update_camera(self.cap2, self.detector_side)
             if toTexture and self.sideFrame is not None:
                 self.camera_view2.texture = self.frameToTexture(self.sideFrame)
@@ -215,24 +214,22 @@ class TwoCameraFrameWindow(Screen):
         ret, frame = cap.read()
         if ret:
             frame = cv2.flip(frame, 1)
-
             processed_frame, result = detector.process_frame(frame)
             landmarks = detector.getLandmarks()
-
             return processed_frame, landmarks
-
+        # ZABEZPIECZENIE: Zwraca poprawnie pusty zestaw w razie błędu kamery
+        return None, []
 
     def frameToTexture(self,frame):
-            buf = cv2.flip(frame, 0).tobytes()
-
-            texture = Texture.create(
-                size=(frame.shape[1], frame.shape[0]),
-                colorfmt='bgr'
-            )
-
-            texture.blit_buffer(buf, colorfmt='bgr', bufferfmt='ubyte')
-
-            return texture
+        if frame is None:
+            return None
+        buf = cv2.flip(frame, 0).tobytes()
+        texture = Texture.create(
+            size=(frame.shape[1], frame.shape[0]),
+            colorfmt='bgr'
+        )
+        texture.blit_buffer(buf, colorfmt='bgr', bufferfmt='ubyte')
+        return texture
 
     def on_leave(self):
         """Uruchamiane przy wychodzeniu - zwalnianie zasobów"""

@@ -16,7 +16,9 @@ class TreningWspierany(TCFW):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.screenExcersise = ex.StandingStance()
-        self.tts = TTS()
+        
+        # ZABEZPIECZENIE: Nie tworzymy tu lokalnego TTS. Pobierzemy go w on_enter()
+        self.tts = None 
         self.last_tts_message = 0
         self.tts_time = 4
         
@@ -24,11 +26,19 @@ class TreningWspierany(TCFW):
         if self.debug:
             self.screenExcersise.start_excersise()
 
+    def on_enter(self):
+        super().on_enter()
+        # ZABEZPIECZENIE: Współdzielony TTS uchroni sterownik audio przed blokadą i crashami
+        self.tts = self.manager.shared_tts
+
     def update_frame(self, dt):
+        super().update_frame(dt, False)
         
-        super().update_frame(dt,False)
+        # ZABEZPIECZENIE: Jeśli nie zczytano klatek z jakiegoś powodu (np brak kamery), uciekamy
+        if self.frontFrame is None or self.sideFrame is None:
+            return
+
         if self.screenExcersise and self.screenExcersise.is_running:
-            #tutaj zwraca tuple (bool, bool) <- (czy jest dobrze wykonywana ta klatka, czy skonczył etap ćwiczenia)
             if self.debug:
                 print(self.screenExcersise.getStateMessage())
             
@@ -65,25 +75,21 @@ class TreningWspierany(TCFW):
                         message = cond.message
                 self.sideFrame = self.detector_side.connectLandmarks(self.sideFrame,cond.landmarks[0],cond.landmarks[1],color)
                 self.sideFrame = self.detector_side.connectLandmarks(self.sideFrame,cond.landmarks[1],cond.landmarks[2],color)
-                    
 
             if is_pose_correct:
                 self.text_box.text = "DOBRZE!"
                 self.text_box.color = (0.2, 1, 0.2, 1)  # Jasnozielony
-
             else:
-
                 self.text_box.text = "SKORYGUJ POSTAWE"
                 self.text_box.color = (1, 0.2, 0.2, 1)  # Czerwony
 
                 current_time = time()
                 if message and (current_time - self.last_tts_message) >= self.tts_time:
-                    self.tts.speak(message)
+                    if self.tts:
+                        self.tts.speak(message)
                     self.last_tts_message = current_time
         
         else:
-
-            
             if self.screenExcersise and self.screenExcersise.is_saved:
                 self.text_box.text = "TRENING ZAPISANY"
                 self.text_box.color = (0.2, 0.6, 1, 1)  # Niebieski
@@ -96,7 +102,6 @@ class TreningWspierany(TCFW):
         
         self.camera_view.texture = self.frameToTexture(self.frontFrame)
         self.camera_view2.texture = self.frameToTexture(self.sideFrame)                
-        
 
     def change_screen(self, target_screen, instance):
         if target_screen == 'menu':
@@ -147,14 +152,12 @@ class TreningWspierany(TCFW):
 
         self.exit_popup.open()
 
-
     def confirm_exit(self, target_screen):
         self.exit_popup.dismiss()
         print("Trening przerwany. Ćwiczenie nie zostało zapisane.")
         if self.screenExcersise:
             self.screenExcersise.is_running = False
         self.manager.current = target_screen
-        
         
     def on_base_save_click(self, training_type_int:int = 0):
         return super().on_base_save_click(1)
