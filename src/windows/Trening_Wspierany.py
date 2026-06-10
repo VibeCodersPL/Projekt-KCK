@@ -9,7 +9,7 @@ from layout_api.TwoCameraFrameWindow import TwoCameraFrameWindow as TCFW
 from layout_api.components.RoundedButton import *
 import detection.excersises as ex
 from detection.excersises import Condition, State
-from tts.tts import *
+from tts.tts import TTS
 from time import time
 
 class TreningWspierany(TCFW):

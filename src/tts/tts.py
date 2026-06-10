@@ -1,27 +1,21 @@
-import pyttsx3
+import os
+import tempfile
 import threading
 import queue
-import platform
+from gtts import gTTS
+from kivy.clock import Clock
+from kivy.core.audio import SoundLoader
 
 class TTS:
     def __init__(self):
-        self.rate = 125
-        self.volume = 1.0
         self.message_queue = queue.Queue()
         self.is_speaking = False
+        self._current_sound = None  # TRZYMAMY REFERENCJĘ! Zapobiega crashom Garbage Collectora
         self.thread = threading.Thread(target=self._speak_task, daemon=True)
         self.thread.start()
 
     def _speak_task(self):
-        """Prywatna funkcja wykonywana w tle."""
-        print("[TTS] Wątek startuje.", flush=True)
-
-        if platform.system() == 'Windows':
-            try:
-                import comtypes
-                comtypes.CoInitialize()
-            except Exception as e:
-                print(f"[TTS] Ostrzeżenie COM: {e}", flush=True)
+        print("[TTS] Wątek gTTS startuje.", flush=True)
 
         while True:
             phrase = self.message_queue.get()
@@ -30,39 +24,72 @@ class TTS:
                 break
 
             self.is_speaking = True
-            print(f"[TTS] Mówię: {phrase}", flush=True)
+            print(f"[TTS] Pobieram audio dla: {phrase}", flush=True)
+            temp_path = None
             
             try:
-                # INIT W ŚRODKU PĘTLI - zapobiega zamrożeniom i crashom na Windowsie
-                engine = pyttsx3.init()
-                engine.setProperty("rate", self.rate)
-                engine.setProperty("volume", self.volume)
-
-                # Ustawianie polskiego głosu
-                voices = engine.getProperty("voices")
-                for voice in voices:
-                    if "polish" in voice.name.lower() or "pl" in voice.id.lower():
-                        engine.setProperty("voice", voice.id)
-                        break
+                # 1. Wygenerowanie pliku mp3 z gTTS
+                tts = gTTS(text=phrase, lang='pl')
+                fd, temp_path = tempfile.mkstemp(suffix=".mp3")
+                os.close(fd)
+                tts.save(temp_path)
                 
-                engine.say(phrase)
-                engine.runAndWait()
-                
-                # Usunięcie instancji po wypowiedzi zwalnia obiekty COM
-                del engine 
+                print(f"[TTS] Odtwarzanie pliku: {temp_path}", flush=True)
+                # 2. Odtworzenie pliku z bezpieczną synchronizacją z Kivy
+                self._play_audio_sync(temp_path)
                 
             except Exception as e:
-                print(f"[TTS] Błąd podczas mówienia (runAndWait): {e}", flush=True)
+                print(f"[TTS] Błąd gTTS: {e}", flush=True)
             finally:
+                # 3. Zawsze bezpiecznie usuwaj plik z dysku
+                if temp_path and os.path.exists(temp_path):
+                    try:
+                        os.remove(temp_path)
+                    except Exception as e:
+                        print(f"[TTS] Ostrzeżenie - nie można usunąć pliku: {e}", flush=True)
+                
                 self.is_speaking = False
                 self.message_queue.task_done()
                 print("[TTS] Zakończono frazę.", flush=True)
 
+    def _play_audio_sync(self, path):
+        """Synchronizuje odtwarzanie dźwięku z głównym wątkiem interfejsu Kivy."""
+        playback_event = threading.Event()
+        
+        # Bezpieczne zlecenie odtworzenia w wątku głównym UI (zapobiega crashom OpenGL)
+        Clock.schedule_once(lambda dt: self._kivy_play(path, playback_event), 0)
+        
+        # Oczekujemy na zakończenie (z twardym limitem 10s na wypadek zwiechy SDL2)
+        playback_event.wait(timeout=10.0)
+
+    def _kivy_play(self, path, playback_event):
+        """Ta metoda JEST wykonywana w głównym wątku Kivy."""
+        # KLUCZOWA POPRAWKA: Przypisujemy do `self`, aby GC nie zniszczył obiektu w locie!
+        self._current_sound = SoundLoader.load(path)
+        
+        if self._current_sound:
+            self._current_sound.play()
+            
+            duration = self._current_sound.length if self._current_sound.length > 0 else 3.0
+            
+            def on_finish(dt):
+                if self._current_sound:
+                    self._current_sound.stop()
+                    self._current_sound.unload()
+                    self._current_sound = None
+                playback_event.set()
+            
+            Clock.schedule_once(on_finish, duration + 0.2)
+        else:
+            print("[TTS] SoundLoader Kivy nie mógł załadować pliku MP3.", flush=True)
+            playback_event.set()
+
     def speak(self, phrase):
-        """Dodaje frazę do kolejki tylko, jeśli bot obecnie milczy i kolejka jest pusta."""
-        print(f"[TTS] Próba dodania do kolejki: {phrase}", flush=True)
+        """Dodaje frazę do kolejki. Zabezpiecza przed spamem."""
         if not self.is_speaking and self.message_queue.empty():
+            print(f"[TTS] Dodano do kolejki: {phrase}", flush=True)
             self.message_queue.put(phrase)
 
     def stop(self):
+        """Zatrzymuje całkowicie wątek"""
         self.message_queue.put(None)
