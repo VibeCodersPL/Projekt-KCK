@@ -178,7 +178,6 @@ class TwoCameraFrameWindow(Screen):
 
     def on_enter(self):
         self.detector_front = self.manager.shared_detector_front
-        self.detector_side = self.manager.shared_detector_side
         self.databaseManager:DBM.DatabaseManager = self.manager.shared_db_manager
         Clock.schedule_once(self._late_camera_init, 0.2)
 
@@ -206,7 +205,7 @@ class TwoCameraFrameWindow(Screen):
                 self.camera_view.texture = self.frameToTexture(self.frontFrame)
 
         if self.cap2 and self.cap2.isOpened():
-            self.sideFrame, self.landmarksSide = self.update_camera(self.cap2, self.detector_side)
+            self.sideFrame, self.landmarksSide = self.update_camera(self.cap2, self.detector_front)
             if toTexture and self.sideFrame is not None:
                 self.camera_view2.texture = self.frameToTexture(self.sideFrame)
 
