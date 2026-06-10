@@ -16,32 +16,12 @@ class TTS:
         """Prywatna funkcja wykonywana w tle."""
         print("[TTS] Wątek startuje.", flush=True)
 
-        # --- KLUCZOWA NAPRAWA DLA WINDOWS ---
-        # Windows wymaga inicjalizacji środowiska COM dla każdego nowego wątku, 
-        # w przeciwnym razie SAPI5 (systemowy TTS) zawiesi się bez błędu.
         if platform.system() == 'Windows':
             try:
                 import comtypes
                 comtypes.CoInitialize()
             except Exception as e:
                 print(f"[TTS] Ostrzeżenie COM: {e}", flush=True)
-        # ------------------------------------
-
-        try:
-            engine = pyttsx3.init()
-            engine.setProperty("rate", self.rate)
-            engine.setProperty("volume", self.volume)
-
-            # Ustawianie polskiego głosu
-            voices = engine.getProperty("voices")
-            for voice in voices:
-                if "polish" in voice.name.lower() or "pl" in voice.id.lower():
-                    engine.setProperty("voice", voice.id)
-                    break
-            print("[TTS] Silnik zainicjowany pomyślnie.", flush=True)
-        except Exception as e:
-            print(f"[TTS] Krytyczny błąd inicjalizacji pyttsx3: {e}", flush=True)
-            return
 
         while True:
             phrase = self.message_queue.get()
@@ -53,8 +33,24 @@ class TTS:
             print(f"[TTS] Mówię: {phrase}", flush=True)
             
             try:
+                # INIT W ŚRODKU PĘTLI - zapobiega zamrożeniom i crashom na Windowsie
+                engine = pyttsx3.init()
+                engine.setProperty("rate", self.rate)
+                engine.setProperty("volume", self.volume)
+
+                # Ustawianie polskiego głosu
+                voices = engine.getProperty("voices")
+                for voice in voices:
+                    if "polish" in voice.name.lower() or "pl" in voice.id.lower():
+                        engine.setProperty("voice", voice.id)
+                        break
+                
                 engine.say(phrase)
                 engine.runAndWait()
+                
+                # Usunięcie instancji po wypowiedzi zwalnia obiekty COM
+                del engine 
+                
             except Exception as e:
                 print(f"[TTS] Błąd podczas mówienia (runAndWait): {e}", flush=True)
             finally:
