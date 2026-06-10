@@ -1,18 +1,47 @@
 import pyttsx3
 import threading
 import queue
+import platform
 
 class TTS:
     def __init__(self):
         self.rate = 125
         self.volume = 1.0
         self.message_queue = queue.Queue()
+        self.is_speaking = False
         self.thread = threading.Thread(target=self._speak_task, daemon=True)
         self.thread.start()
 
     def _speak_task(self):
         """Prywatna funkcja wykonywana w tle."""
-        print("[TTS] Wątek TTS gotowy do pracy w tle.", flush=True)
+        print("[TTS] Wątek startuje.", flush=True)
+
+        # --- KLUCZOWA NAPRAWA DLA WINDOWS ---
+        # Windows wymaga inicjalizacji środowiska COM dla każdego nowego wątku, 
+        # w przeciwnym razie SAPI5 (systemowy TTS) zawiesi się bez błędu.
+        if platform.system() == 'Windows':
+            try:
+                import comtypes
+                comtypes.CoInitialize()
+            except Exception as e:
+                print(f"[TTS] Ostrzeżenie COM: {e}", flush=True)
+        # ------------------------------------
+
+        try:
+            engine = pyttsx3.init()
+            engine.setProperty("rate", self.rate)
+            engine.setProperty("volume", self.volume)
+
+            # Ustawianie polskiego głosu
+            voices = engine.getProperty("voices")
+            for voice in voices:
+                if "polish" in voice.name.lower() or "pl" in voice.id.lower():
+                    engine.setProperty("voice", voice.id)
+                    break
+            print("[TTS] Silnik zainicjowany pomyślnie.", flush=True)
+        except Exception as e:
+            print(f"[TTS] Krytyczny błąd inicjalizacji pyttsx3: {e}", flush=True)
+            return
 
         while True:
             phrase = self.message_queue.get()
@@ -20,40 +49,24 @@ class TTS:
                 print("[TTS] Zamykanie wątku TTS.", flush=True)
                 break
 
+            self.is_speaking = True
             print(f"[TTS] Mówię: {phrase}", flush=True)
+            
             try:
-                # Trik dla Windowsa: inicjalizujemy silnik od nowa dla 
-                # każdej frazy. Zapobiega to blokowaniu się pętli SAPI5.
-                engine = pyttsx3.init()
-                engine.setProperty("rate", self.rate)
-                engine.setProperty("volume", self.volume)
-
-                # Ustawienie polskiego głosu
-                voices = engine.getProperty("voices")
-                for voice in voices:
-                    name = voice.name.lower()
-                    vid = voice.id.lower()
-                    if "polish" in name or "pl" in vid:
-                        engine.setProperty("voice", voice.id)
-                        break
-
                 engine.say(phrase)
                 engine.runAndWait()
-                
-                # Bezpieczne usunięcie silnika z pamięci (ważne dla Windowsa)
-                del engine 
-
             except Exception as e:
-                print(f"[TTS] Krytyczny błąd silnika TTS: {e}", flush=True)
+                print(f"[TTS] Błąd podczas mówienia (runAndWait): {e}", flush=True)
             finally:
+                self.is_speaking = False
                 self.message_queue.task_done()
-                print("[TTS] Zakończono mówienie.", flush=True)
+                print("[TTS] Zakończono frazę.", flush=True)
 
     def speak(self, phrase):
-        """Dodaje frazę do kolejki, jeśli nie jest przepełniona (anti-spam)."""
-        if self.message_queue.qsize() < 2:
+        """Dodaje frazę do kolejki tylko, jeśli bot obecnie milczy i kolejka jest pusta."""
+        print(f"[TTS] Próba dodania do kolejki: {phrase}", flush=True)
+        if not self.is_speaking and self.message_queue.empty():
             self.message_queue.put(phrase)
 
     def stop(self):
-        """Bezpieczne zatrzymanie wątku z zewnątrz."""
         self.message_queue.put(None)
