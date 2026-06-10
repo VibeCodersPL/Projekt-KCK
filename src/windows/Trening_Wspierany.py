@@ -28,13 +28,11 @@ class TreningWspierany(TCFW):
 
     def on_enter(self):
         super().on_enter()
-        # ZABEZPIECZENIE: Współdzielony TTS uchroni sterownik audio przed blokadą i crashami
         self.tts = self.manager.shared_tts
 
     def update_frame(self, dt):
         super().update_frame(dt, False)
         
-        # ZABEZPIECZENIE: Jeśli nie zczytano klatek z jakiegoś powodu (np brak kamery), uciekamy
         if self.frontFrame is None or self.sideFrame is None:
             return
 

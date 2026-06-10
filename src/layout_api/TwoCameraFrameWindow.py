@@ -179,12 +179,13 @@ class TwoCameraFrameWindow(Screen):
     def on_enter(self):
         self.detector_front = self.manager.shared_detector_front
         self.detector_side = self.manager.shared_detector_side
+
         self.databaseManager:DBM.DatabaseManager = self.manager.shared_db_manager
         Clock.schedule_once(self._late_camera_init, 0.2)
 
     def _late_camera_init(self, dt):
         self.cap = cv2.VideoCapture(1)
-        self.cap2 = cv2.VideoCapture(0)
+        self.cap2 = cv2.VideoCapture(2)
 
         if(not self.cap2 or not self.cap2.isOpened()):
            self.cap2 = self.cap 
