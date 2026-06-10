@@ -71,8 +71,8 @@ class TreningWspierany(TCFW):
                     color = (0,0,255)
                     if message is None and hasattr(cond,'message'):
                         message = cond.message
-                self.sideFrame = self.detector_front.connectLandmarks(self.sideFrame,cond.landmarks[0],cond.landmarks[1],color)
-                self.sideFrame = self.detector_front.connectLandmarks(self.sideFrame,cond.landmarks[1],cond.landmarks[2],color)
+                self.sideFrame = self.detector_side.connectLandmarks(self.sideFrame,cond.landmarks[0],cond.landmarks[1],color)
+                self.sideFrame = self.detector_side.connectLandmarks(self.sideFrame,cond.landmarks[1],cond.landmarks[2],color)
 
             if is_pose_correct:
                 self.text_box.text = "DOBRZE!"
