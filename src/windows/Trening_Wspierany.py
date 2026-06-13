@@ -20,12 +20,13 @@ class TreningWspierany(TCFW):
         self.tts_time = 4
         
         self.debug = True
-        if self.debug:
-            self.screenExcersise.start_excersise()
 
     def on_enter(self):
         super().on_enter()
         self.tts = self.manager.shared_tts
+        
+        if self.debug and self.screenExcersise:
+            self.screenExcersise.start_excersise()
 
     def process_frame(self, frame, detector, landmarks, conditions, current_message):
             message = current_message
@@ -67,14 +68,12 @@ class TreningWspierany(TCFW):
                 print(is_pose_correct, isStateEnded)
             if isStateEnded:
                 if self.debug:
-                    #self.screenExcersise.setState(None)
                     print('zmieniam stan')
                     print(self.screenExcersise.getStateMessage())
                     print(self.screenExcersise.getEndStats())
 
             message = None
                     
-            # Rysowanie na kamerach
             if self.landmarksFront and self.landmarksSide:
                 condFront, condSide = self.screenExcersise.getStateConditions()
                 
@@ -125,6 +124,11 @@ class TreningWspierany(TCFW):
             else:
                 self.text_box.text = "ROZPOCZNIJ CWICZENIE"
                 self.text_box.color = (1, 1, 1, 1)  # Biały
+
+            if self.frontFrame is not None:
+                self.camera_view.texture = self.frameToTexture(self.frontFrame)
+            if self.sideFrame is not None:
+                self.camera_view2.texture = self.frameToTexture(self.sideFrame)
 
     def change_screen(self, target_screen, instance):
         if target_screen == 'menu':
