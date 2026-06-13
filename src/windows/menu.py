@@ -72,7 +72,7 @@ class MenuScreen(Screen):
 
 
     def on_enter(self):
-        self.detector = self.manager.shared_detector_front
+        self.detector = self.manager.shared_detector
         Clock.schedule_once(self._late_camera_init, 0.2)
 
     def _late_camera_init(self, dt):
@@ -152,8 +152,7 @@ class Menu(App):
     def build(self):
         Window.fullscreen = 'auto'
         sm = ScreenManager(transition=NoTransition())
-        sm.shared_detector_front = BaseDetection()
-        sm.shared_detector_side = BaseDetection()
+        sm.shared_detector = BaseDetection()
 
         sm.shared_tts = TTS()
         sm.shared_db_manager = DatabaseManager()

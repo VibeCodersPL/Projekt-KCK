@@ -28,7 +28,7 @@ class TreningWspierany(TCFW):
         super().on_enter()
         self.tts = self.manager.shared_tts
 
-    def process_side(self, frame, detector, landmarks, conditions, current_message):
+    def process_frame(self, frame, detector, landmarks, conditions, current_message):
             message = current_message
             
             for cond in conditions:
@@ -80,9 +80,9 @@ class TreningWspierany(TCFW):
                 condFront, condSide = self.screenExcersise.getStateConditions()
                 
                 # --- PRZETWARZANIE KAMERY PRZEDNIEJ ---
-                self.frontFrame, message = self.process_side(
+                self.frontFrame, message = self.process_frame(
                     self.frontFrame, 
-                    self.detector_front, 
+                    self.detector, 
                     self.landmarksFront, 
                     condFront, 
                     message
@@ -90,9 +90,9 @@ class TreningWspierany(TCFW):
                 self.camera_view.texture = self.frameToTexture(self.frontFrame)
                 
                 # --- PRZETWARZANIE KAMERY BOCZNEJ ---
-                self.sideFrame, message = self.process_side(
+                self.sideFrame, message = self.process_frame(
                     self.sideFrame, 
-                    self.detector_front, 
+                    self.detector, 
                     self.landmarksSide, 
                     condSide, 
                     message
