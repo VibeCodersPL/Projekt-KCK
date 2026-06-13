@@ -154,6 +154,7 @@ class Menu(App):
         sm = ScreenManager(transition=NoTransition())
         sm.shared_detector_front = BaseDetection()
         sm.shared_detector_side = BaseDetection()
+
         sm.shared_tts = TTS()
         sm.shared_db_manager = DatabaseManager()
         sm.add_widget(MenuScreen(name='menu'))
