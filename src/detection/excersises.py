@@ -146,7 +146,7 @@ class Exercise:
                     isAllConditionsMet = False
                     continue
 
-                angle = self.__calculateThreePointAngle(
+                angle = self.calculateThreePointAngle(
                     landmarks[cond.landmarks[0]], 
                     landmarks[cond.landmarks[1]], 
                     landmarks[cond.landmarks[2]]
@@ -203,7 +203,7 @@ class Exercise:
             self.__lastFramesCorrectnessMetricArray[self.__frameCounter] = metric
         self.__frameCounter = (self.__frameCounter + 1) % self.__CORRECT_FRAMES
     
-    def __calculateThreePointAngle(self,leftP, midP, rightP) -> int:
+    def calculateThreePointAngle(self,leftP, midP, rightP) -> int:
         """calculates angle of three points
 
         Args:
@@ -290,7 +290,6 @@ class LowReady(Exercise):
 class StandingStance(Exercise):
     def __init__(self):
         super().__init__("StandingStance")
-
         messages = tts_messages.get("CwiczenieStojaca", [])
 
         def get_message(message_number, default="Skoryguj postawę"):
@@ -299,11 +298,11 @@ class StandingStance(Exercise):
             return default
 
         legs_front = [
-            Condition([24, 26, 28], degree=155, tolerance=0.15, message=get_message(0)),  # Lewe kolano
-            Condition([23, 25, 27], degree=155, tolerance=0.15, message=get_message(0))   # Prawe kolano
+            Condition([24, 26, 28], degree=165, tolerance=0.15, message=get_message(0)),
+            Condition([23, 25, 27], degree=165, tolerance=0.15, message=get_message(0)) 
         ]
         legs_side = [
-            Condition([23, 25, 27], degree=145, tolerance=0.15, message="Zegnij mocniej kolana (widok z boku)")
+            Condition([23, 25, 27], degree=165, tolerance=0.15, message="Zegnij mocniej kolana (widok z boku)")
         ]
 
         torso_front = [
@@ -315,12 +314,11 @@ class StandingStance(Exercise):
 
         ]
 
-
         arms_front = [
-            Condition([23, 11, 13], degree=30, tolerance=0.5, message=get_message(1))     # Prawy bark / odwiedzenie
+            Condition([23, 11, 13], degree=20, tolerance=0.5, message=get_message(1))    
         ]
         arms_side = [
-            Condition([11, 13, 15], degree=130, tolerance=0.2, message="Skoryguj wysokość uniesienia broni")  # Lewy bark
+            Condition([11, 13, 15], degree=130, tolerance=0.2, message="Skoryguj wysokość uniesienia broni")
         ]
 
         self._states["Legs"] = State(
@@ -341,7 +339,10 @@ class StandingStance(Exercise):
             messege="Złóż się do strzału. Zablokuj ramiona w ramie."
         )
 
-        self._currentState = self._states.get("Legs")
+        self._currentState = self._states.get("LegsTorsoArms")
+
+
+        #self._currentState = self._states.get("Legs")
         self._currentState.start()
         self._timeOfStateStart = self._currentState.startTime
            

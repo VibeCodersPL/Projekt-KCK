@@ -28,7 +28,6 @@ class TwoCameraFrameWindow(Screen):
         self.landmarksFront = []
         self.landmarksSide = []
         
-        # ZABEZPIECZENIE: Zmienne zainicjowane z góry
         self.frontFrame = None
         self.sideFrame = None
         self.cap = None

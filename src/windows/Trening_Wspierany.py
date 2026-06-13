@@ -17,7 +17,6 @@ class TreningWspierany(TCFW):
         super().__init__(**kwargs)
         self.screenExcersise = ex.StandingStance()
         
-        # ZABEZPIECZENIE: Nie tworzymy tu lokalnego TTS. Pobierzemy go w on_enter()
         self.tts = None 
         self.last_tts_message = 0
         self.tts_time = 4
@@ -41,10 +40,11 @@ class TreningWspierany(TCFW):
                 print(self.screenExcersise.getStateMessage())
             
             is_pose_correct, isStateEnded = self.screenExcersise.checkExcersise(self.landmarksFront, self.landmarksSide)            
-            
+            if self.debug:
+                print(is_pose_correct, isStateEnded)
             if isStateEnded:
-                #self.screenExcersise.setState(None)
                 if self.debug:
+                    #self.screenExcersise.setState(None)
                     print('zmieniam stan')
                     print(self.screenExcersise.getStateMessage())
                     print(self.screenExcersise.getEndStats())
@@ -60,6 +60,9 @@ class TreningWspierany(TCFW):
                     color = (0,0,255)
                     if message is None and hasattr(cond,'message'):
                         message = cond.message
+                if self.debug:               
+                    if self.landmarksFront:
+                        self.detector_front.printDegOnLandmark(self.frontFrame,cond.landmarks[1], self.screenExcersise.calculateThreePointAngle(self.landmarksFront[cond.landmarks[0]],self.landmarksFront[cond.landmarks[1]],self.landmarksFront[cond.landmarks[2]]))
                 self.frontFrame = self.detector_front.connectLandmarks(self.frontFrame,cond.landmarks[0],cond.landmarks[1],color)
                 self.frontFrame = self.detector_front.connectLandmarks(self.frontFrame,cond.landmarks[1],cond.landmarks[2],color)
                     
@@ -71,6 +74,9 @@ class TreningWspierany(TCFW):
                     color = (0,0,255)
                     if message is None and hasattr(cond,'message'):
                         message = cond.message
+                if self.debug:
+                    if self.landmarksSide:
+                        self.detector_side.printDegOnLandmark(self.sideFrame,cond.landmarks[1], self.screenExcersise.calculateThreePointAngle(self.landmarksSide[cond.landmarks[0]],self.landmarksSide[cond.landmarks[1]],self.landmarksSide[cond.landmarks[2]]))        
                 self.sideFrame = self.detector_side.connectLandmarks(self.sideFrame,cond.landmarks[0],cond.landmarks[1],color)
                 self.sideFrame = self.detector_side.connectLandmarks(self.sideFrame,cond.landmarks[1],cond.landmarks[2],color)
 
