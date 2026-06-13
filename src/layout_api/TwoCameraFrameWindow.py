@@ -219,7 +219,6 @@ class TwoCameraFrameWindow(Screen):
             processed_frame, result = detector.process_frame(frame)
             landmarks = detector.getLandmarks()
             return processed_frame, landmarks
-        # ZABEZPIECZENIE: Zwraca poprawnie pusty zestaw w razie błędu kamery
         return None, []
 
     def frameToTexture(self,frame):

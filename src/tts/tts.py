@@ -11,6 +11,10 @@ class TTS:
         self.message_queue = queue.Queue()
         self.is_speaking = False
         self._current_sound = None  # TRZYMAMY REFERENCJĘ! Zapobiega crashom Garbage Collectora
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        self.temp_dir = os.path.join(base_dir, '..', '..', 'temp')
+        os.makedirs(self.temp_dir, exist_ok=True)
+        
         self.thread = threading.Thread(target=self._speak_task, daemon=True)
         self.thread.start()
 
@@ -30,7 +34,7 @@ class TTS:
             try:
                 # 1. Wygenerowanie pliku mp3 z gTTS
                 tts = gTTS(text=phrase, lang='pl')
-                fd, temp_path = tempfile.mkstemp(suffix=".mp3")
+                fd, temp_path = tempfile.mkstemp(suffix=".mp3", dir=self.temp_dir)
                 os.close(fd)
                 tts.save(temp_path)
                 
