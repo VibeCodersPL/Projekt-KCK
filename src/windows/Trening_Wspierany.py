@@ -12,9 +12,8 @@ from tts.tts import TTS
 from time import time
 
 class TreningWspierany(TCFW):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.screenExcersise = ex.StandingStance()
+    def __init__(self, screenExcersise:ex.Exercise, **kwargs):
+        super().__init__(screenExcersise=screenExcersise,**kwargs)
         
         self.tts = None 
         self.last_tts_message = 0

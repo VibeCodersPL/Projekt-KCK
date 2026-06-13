@@ -22,7 +22,7 @@ from windows.PostawaKleczaca import *
 from tts.tts import *
 from database.database_manager import *
 from windows.Statystyki import *
-
+import detection.excersises as ex
 
 class MenuScreen(Screen):
     def __init__(self, **kwargs):
@@ -157,8 +157,8 @@ class Menu(App):
         sm.shared_tts = TTS()
         sm.shared_db_manager = DatabaseManager()
         sm.add_widget(MenuScreen(name='menu'))
-        sm.add_widget(TreningWspierany(name='Trening wspierany'))
-        sm.add_widget(Trening_Jednego_Elementu(name='TreningJednegoElementu'))
+        sm.add_widget(TreningWspierany(screenExcersise=ex.StandingStance(),name='Trening wspierany'))
+        sm.add_widget(Trening_Jednego_Elementu(screenExcersise=ex.StandingStance(),name='TreningJednegoElementu'))
         sm.add_widget(WzorowyPokazScreen(name='WzorowyPokaz'))
         sm.add_widget(PostawaStojaca(name='PostawaStojaca'))
         sm.add_widget(PostawaKleczaca(name='PostawaKleczaca'))

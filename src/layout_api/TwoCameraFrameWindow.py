@@ -18,11 +18,11 @@ import detection.base_detection as Bd
 import database.database_manager as DBM
 
 class TwoCameraFrameWindow(Screen):
-    screenExcersise: Ex.Exercise = None
 
-    def __init__(self, **kwargs):
+    def __init__(self, screenExcersise:Ex.Exercise, **kwargs):
         super().__init__(**kwargs)
         self.shared_detector = None
+        self.screenExcersise: Ex.Exercise = screenExcersise
 
         self.landmarksFront = []
         self.landmarksSide = []
