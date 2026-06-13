@@ -339,10 +339,7 @@ class StandingStance(Exercise):
             messege="Złóż się do strzału. Zablokuj ramiona w ramie."
         )
 
-        self._currentState = self._states.get("LegsTorsoArms")
-
-
-        #self._currentState = self._states.get("Legs")
+        self._currentState = self._states.get("Legs")
         self._currentState.start()
         self._timeOfStateStart = self._currentState.startTime
            
