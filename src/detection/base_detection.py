@@ -88,9 +88,9 @@ class BaseDetection:
             return (resLandmark.x, resLandmark.y)
         return None
     
-    def _printDegOnLandmark(self,frame, landmark, degree:int): 
+    def printDegOnLandmark(self,frame, landmark, degree:int): 
         h, w, _ = frame.shape    
-        frame = cv2.putText(frame, str(degree) , (int(landmark.x * w), int(landmark.y * h)), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)            
+        frame = cv2.putText(frame, str(degree) , (int(self.landmarks[landmark].x * w), int(self.landmarks[landmark].y * h)), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255, 255), 2)            
         return frame
     
     def _printDegCircOnLandmark(self,frame, landmark, degree:int): 

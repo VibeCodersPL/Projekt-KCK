@@ -8,27 +8,50 @@ from kivy.uix.popup import Popup
 from layout_api.TwoCameraFrameWindow import TwoCameraFrameWindow as TCFW
 from layout_api.components.RoundedButton import *
 import detection.excersises as ex
-from detection.excersises import Condition, State
 from tts.tts import TTS
 from time import time
 
 class TreningWspierany(TCFW):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.screenExcersise = ex.StandingStance()
+    def __init__(self, screenExcersise:ex.Exercise, **kwargs):
+        super().__init__(screenExcersise=screenExcersise,**kwargs)
         
-        # ZABEZPIECZENIE: Nie tworzymy tu lokalnego TTS. Pobierzemy go w on_enter()
         self.tts = None 
         self.last_tts_message = 0
         self.tts_time = 4
         
         self.debug = True
-        if self.debug:
-            self.screenExcersise.start_excersise()
 
     def on_enter(self):
         super().on_enter()
         self.tts = self.manager.shared_tts
+        
+        if self.debug and self.screenExcersise:
+            self.screenExcersise.start_excersise()
+
+    def process_frame(self, frame, detector, landmarks, conditions, current_message):
+            message = current_message
+            
+            for cond in conditions:
+                if cond.conditionMet:
+                    color = (0, 255, 0)
+                else:
+                    color = (0, 0, 255)
+                    if message is None and hasattr(cond, 'message'):
+                        message = cond.message
+                
+                if self.debug and landmarks:
+                    angle = self.screenExcersise.calculateThreePointAngle(
+                        landmarks[cond.landmarks[0]],
+                        landmarks[cond.landmarks[1]],
+                        landmarks[cond.landmarks[2]]
+                    )
+                    detector.printDegOnLandmark(frame, cond.landmarks[1], angle)
+                
+                frame = detector.connectLandmarks(frame, cond.landmarks[0], cond.landmarks[1], color)
+                frame = detector.connectLandmarks(frame, cond.landmarks[1], cond.landmarks[2], color)
+                
+            return frame, message
+
 
     def update_frame(self, dt):
         super().update_frame(dt, False)
@@ -41,9 +64,9 @@ class TreningWspierany(TCFW):
                 print(self.screenExcersise.getStateMessage())
             
             is_pose_correct, isStateEnded = self.screenExcersise.checkExcersise(self.landmarksFront, self.landmarksSide)            
-            
+            if self.debug:
+                print(is_pose_correct, isStateEnded)
             if isStateEnded:
-                self.screenExcersise.setState(None)
                 if self.debug:
                     print('zmieniam stan')
                     print(self.screenExcersise.getStateMessage())
@@ -51,42 +74,46 @@ class TreningWspierany(TCFW):
 
             message = None
                     
-            # Rysowanie na kamerze przedniej
-            condFront, condSide = self.screenExcersise.getStateConditions()
-            for cond in condFront:
-                if cond.conditionMet:
-                    color = (0,255,0)
-                else:
-                    color = (0,0,255)
-                    if message is None and hasattr(cond,'message'):
-                        message = cond.message
-                self.frontFrame = self.detector_front.connectLandmarks(self.frontFrame,cond.landmarks[0],cond.landmarks[1],color)
-                self.frontFrame = self.detector_front.connectLandmarks(self.frontFrame,cond.landmarks[1],cond.landmarks[2],color)
-                    
-            # Rysowanie na kamerze bocznej
-            for cond in condSide:
-                if cond.conditionMet:
-                    color = (0,255,0)
-                else:
-                    color = (0,0,255)
-                    if message is None and hasattr(cond,'message'):
-                        message = cond.message
-                self.sideFrame = self.detector_side.connectLandmarks(self.sideFrame,cond.landmarks[0],cond.landmarks[1],color)
-                self.sideFrame = self.detector_side.connectLandmarks(self.sideFrame,cond.landmarks[1],cond.landmarks[2],color)
+            if self.landmarksFront and self.landmarksSide:
+                condFront, condSide = self.screenExcersise.getStateConditions()
+                
+                # --- PRZETWARZANIE KAMERY PRZEDNIEJ ---
+                self.frontFrame, message = self.process_frame(
+                    self.frontFrame, 
+                    self.detector, 
+                    self.landmarksFront, 
+                    condFront, 
+                    message
+                )
+                self.camera_view.texture = self.frameToTexture(self.frontFrame)
+                
+                # --- PRZETWARZANIE KAMERY BOCZNEJ ---
+                self.sideFrame, message = self.process_frame(
+                    self.sideFrame, 
+                    self.detector, 
+                    self.landmarksSide, 
+                    condSide, 
+                    message
+                )
+                self.camera_view2.texture = self.frameToTexture(self.sideFrame)
 
-            if is_pose_correct:
-                self.text_box.text = "DOBRZE!"
-                self.text_box.color = (0.2, 1, 0.2, 1)  # Jasnozielony
+                if is_pose_correct:
+                    self.text_box.text = "DOBRZE!"
+                    self.text_box.color = (0.2, 1, 0.2, 1)  # Jasnozielony
+                else:
+                    self.text_box.text = "SKORYGUJ POSTAWE"
+                    self.text_box.color = (1, 0.2, 0.2, 1)  # Czerwony
+
+                    current_time = time()
+                    if message and (current_time - self.last_tts_message) >= self.tts_time:
+                        if self.tts:
+                            self.tts.speak(message)
+                        self.last_tts_message = current_time
             else:
-                self.text_box.text = "SKORYGUJ POSTAWE"
-                self.text_box.color = (1, 0.2, 0.2, 1)  # Czerwony
+                self.text_box.text = "STAŃ W ZASIĘGU KAMER"
+                self.camera_view.texture = self.frameToTexture(self.frontFrame)
+                self.camera_view2.texture = self.frameToTexture(self.sideFrame)                
 
-                current_time = time()
-                if message and (current_time - self.last_tts_message) >= self.tts_time:
-                    if self.tts:
-                        self.tts.speak(message)
-                    self.last_tts_message = current_time
-        
         else:
             if self.screenExcersise and self.screenExcersise.is_saved:
                 self.text_box.text = "TRENING ZAPISANY"
@@ -97,9 +124,11 @@ class TreningWspierany(TCFW):
             else:
                 self.text_box.text = "ROZPOCZNIJ CWICZENIE"
                 self.text_box.color = (1, 1, 1, 1)  # Biały
-        
-        self.camera_view.texture = self.frameToTexture(self.frontFrame)
-        self.camera_view2.texture = self.frameToTexture(self.sideFrame)                
+
+            if self.frontFrame is not None:
+                self.camera_view.texture = self.frameToTexture(self.frontFrame)
+            if self.sideFrame is not None:
+                self.camera_view2.texture = self.frameToTexture(self.sideFrame)
 
     def change_screen(self, target_screen, instance):
         if target_screen == 'menu':
