@@ -66,15 +66,14 @@ class MenuScreen(Screen):
             size=(100, 100),
             pos = (-100,-100)
         )
-        self.add_widget(self.cursor)
-        self.detector = None
+        #self.add_widget(self.cursor)
+        self.detector_front = None
         self.cap = None
         self.update = None
 
     def change_screen(self, instance):
         target_screen = self.screen_mapping.get(instance.text)
         
-        # ZMIANA: Zamiast od razu przełączać ekran, sprawdzamy co zostało kliknięte
         if target_screen in ['Trening wspierany', 'TreningJednegoElementu']:
             self.show_exercise_popup(target_screen)
         elif target_screen:
@@ -102,6 +101,10 @@ class MenuScreen(Screen):
         popup.bind(on_dismiss=lambda x: self.clear_popup_buttons())
         
         popup.open()
+        if self.cursor in Window.children:
+            Window.remove_widget(self.cursor)
+        Window.add_widget(self.cursor)
+
 
     def start_training(self, target_screen_name, exercise_obj, popup):
         popup.dismiss()
@@ -114,10 +117,11 @@ class MenuScreen(Screen):
     def clear_popup_buttons(self):
         self.active_popup_buttons = []
         for button in self.menu_buttons:
-            button.process_hover([]) # Wymuszamy reset podświetlenia menu głównego
+            button.process_hover([]) 
 
     def on_enter(self):
-        self.detector = self.manager.shared_detector
+        Window.add_widget(self.cursor)
+        self.detector_front = self.manager.shared_detector_front
         Clock.schedule_once(self._late_camera_init, 0.2)
 
     def _late_camera_init(self, dt):
@@ -130,13 +134,15 @@ class MenuScreen(Screen):
 
 
     def on_leave(self):
+        if self.cursor in Window.children:
+            Window.remove_widget(self.cursor)
         if self.update:
             self.update.cancel()
             self.update = None
         if self.cap:
             self.cap.release()
             self.cap = None
-        self.detector = None
+        self.detector_front = None
 
         
         self.cursor.pos = (-100, -100)
@@ -144,7 +150,6 @@ class MenuScreen(Screen):
         for button in self.menu_buttons:
             button.process_hover([])
  
-
 
     def update_frame(self, dt):
         if not self.cap or not self.cap.isOpened():
@@ -155,18 +160,17 @@ class MenuScreen(Screen):
             return
             
         frame = cv2.flip(frame, 1)
-        # Przetwarzamy klatkę dla detektora
-        _, result = self.detector.process_frame(frame)
+        _, result = self.detector_front.process_frame(frame)
         
         self.handle_cursor_and_hover()
                 
     def handle_cursor_and_hover(self):
-        if not self.detector:
+        if not self.detector_front:
             return
 
         interaction_points = []
         for idx in [15, 17, 19, 16, 18, 20]:
-            lm = self.detector.getLandmarkCords(idx)
+            lm = self.detector_front.getLandmarkCords(idx)
             if lm:
                 win_x = lm[0] * Window.width
                 win_y = (1.0 - lm[1]) * Window.height
@@ -177,7 +181,7 @@ class MenuScreen(Screen):
 
         if interaction_points:
             # aktualizacja pozycji kursora wizualnego
-            main_lm = self.detector.getLandmarkCords(19)
+            main_lm = self.detector_front.getLandmarkCords(19)
             if main_lm:
                 cursor_x = main_lm[0] * Window.width
                 cursor_y = (1.0 - main_lm[1]) * Window.height
@@ -214,8 +218,8 @@ class Menu(App):
     def build(self):
         Window.fullscreen = 'auto'
         sm = ScreenManager(transition=NoTransition())
-        sm.shared_detector = BaseDetection()
-
+        sm.shared_detector_front = BaseDetection()
+        sm.shared_detector_side = BaseDetection()
         sm.shared_tts = TTS()
         sm.shared_db_manager = DatabaseManager()
         sm.add_widget(MenuScreen(name='menu'))

@@ -80,29 +80,27 @@ class TreningWspierany(TCFW):
                 # --- PRZETWARZANIE KAMERY PRZEDNIEJ ---
                 self.frontFrame, message = self.process_frame(
                     self.frontFrame, 
-                    self.detector, 
+                    self.detector_front, 
                     self.landmarksFront, 
                     condFront, 
                     message
                 )
-                self.camera_view.texture = self.frameToTexture(self.frontFrame)
                 
                 # --- PRZETWARZANIE KAMERY BOCZNEJ ---
                 self.sideFrame, message = self.process_frame(
                     self.sideFrame, 
-                    self.detector, 
+                    self.detector_side, 
                     self.landmarksSide, 
                     condSide, 
                     message
                 )
-                self.camera_view2.texture = self.frameToTexture(self.sideFrame)
+                
 
                 if is_pose_correct:
-                    self.text_box.text = "DOBRZE!"
-                    self.text_box.color = (0.2, 1, 0.2, 1)  # Jasnozielony
+                    self.set_title_text("DOBRZE!",(0.2, 1, 0.2, 1))
+
                 else:
-                    self.text_box.text = "SKORYGUJ POSTAWE"
-                    self.text_box.color = (1, 0.2, 0.2, 1)  # Czerwony
+                    self.set_title_text("SKORYGUJ POSTAWE",(1, 0.2, 0.2, 1))
 
                     current_time = time()
                     if message and (current_time - self.last_tts_message) >= self.tts_time:
@@ -111,24 +109,25 @@ class TreningWspierany(TCFW):
                         self.last_tts_message = current_time
             else:
                 self.text_box.text = "STAŃ W ZASIĘGU KAMER"
-                self.camera_view.texture = self.frameToTexture(self.frontFrame)
-                self.camera_view2.texture = self.frameToTexture(self.sideFrame)                
+            
 
         else:
             if self.screenExcersise and self.screenExcersise.is_saved:
-                self.text_box.text = "TRENING ZAPISANY"
-                self.text_box.color = (0.2, 0.6, 1, 1)  # Niebieski
+                self.set_title_text("TRENING ZAPISANY", (0.2, 0.6, 1, 1))
             elif self.screenExcersise and self.screenExcersise.has_run:
-                self.text_box.text = "ZAKONCZONO - ZAPISZ TRENING"
-                self.text_box.color = (1, 0.8, 0, 1)  # Żółty
+                self.set_title_text("ZAKONCZONO - ZAPISZ TRENING",(1, 0.8, 0, 1))
             else:
-                self.text_box.text = "ROZPOCZNIJ CWICZENIE"
-                self.text_box.color = (1, 1, 1, 1)  # Biały
+                self.set_title_text("ROZPOCZNIJ CWICZENIE")
 
-            if self.frontFrame is not None:
-                self.camera_view.texture = self.frameToTexture(self.frontFrame)
-            if self.sideFrame is not None:
-                self.camera_view2.texture = self.frameToTexture(self.sideFrame)
+        if self.frontFrame is not None:
+            self.camera_view.texture = self.frameToTexture(self.frontFrame)
+        if self.sideFrame is not None:
+            self.camera_view2.texture = self.frameToTexture(self.sideFrame)
+
+
+
+
+
 
     def change_screen(self, target_screen, instance):
         if target_screen == 'menu':

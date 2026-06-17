@@ -102,12 +102,12 @@ class TwoCameraFrameWindow(Screen):
 
     def handle_base_hover(self):
         """Logika najeżdżania na bazowe przyciski z powiększonym marginesem błędu i płynnym cofaniem"""
-        if not self.detector:
+        if not self.detector_front:
             return
 
         wrists = []
         for idx in [15, 17, 19, 16, 18, 20]:
-            lm = self.detector.getLandmarkCords(idx)
+            lm = self.detector_front.getLandmarkCords(idx)
             if lm:
                 kivy_x = self.camera_view.x + (lm[0] * self.camera_view.width)
                 kivy_y = self.camera_view.y + ((1.0 - lm[1]) * self.camera_view.height)
@@ -175,8 +175,8 @@ class TwoCameraFrameWindow(Screen):
         self.manager.current = target_screen
 
     def on_enter(self):
-        self.detector = self.manager.shared_detector
-
+        self.detector_front = self.manager.shared_detector_front
+        self.detector_side = self.manager.shared_detector_side
         self.databaseManager:DBM.DatabaseManager = self.manager.shared_db_manager
         Clock.schedule_once(self._late_camera_init, 0.2)
 
@@ -200,12 +200,12 @@ class TwoCameraFrameWindow(Screen):
         self.handle_base_hover()
 
         if self.cap and self.cap.isOpened():
-            self.frontFrame, self.landmarksFront = self.update_camera(self.cap, self.detector)
+            self.frontFrame, self.landmarksFront = self.update_camera(self.cap, self.detector_front)
             if toTexture and self.frontFrame is not None:
                 self.camera_view.texture = self.frameToTexture(self.frontFrame)
 
         if self.cap2 and self.cap2.isOpened():
-            self.sideFrame, self.landmarksSide = self.update_camera(self.cap2, self.detector)
+            self.sideFrame, self.landmarksSide = self.update_camera(self.cap2, self.detector_side)
             if toTexture and self.sideFrame is not None:
                 self.camera_view2.texture = self.frameToTexture(self.sideFrame)
 
