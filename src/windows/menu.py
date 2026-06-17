@@ -93,7 +93,7 @@ class MenuScreen(Screen):
         popup = Popup(title='Wybierz ćwiczenie', content=layout, size_hint=(None, None), size=(400, 350))
 
         btn_stand.bind(on_press=lambda x: self.start_training(target_screen_name, ex.StandingStance(), popup))
-        btn_kneel.bind(on_press=lambda x: self.start_training(target_screen_name, ex.StandingStance(), popup)) 
+        btn_kneel.bind(on_press=lambda x: self.start_training(target_screen_name, ex.KneelingStance(), popup)) 
         btn_cancel.bind(on_press=popup.dismiss)
 
         self.active_popup_buttons = [btn_stand, btn_kneel, btn_cancel]

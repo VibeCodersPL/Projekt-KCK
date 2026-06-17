@@ -88,7 +88,7 @@ class Exercise:
         self.has_run = False
         self.is_saved = False
         self._currentState.start()
-
+        self.messages = None
     def start_excersise(self):
         self.is_running = True
         self.has_run = False
@@ -275,6 +275,12 @@ class Exercise:
             
         return output
     
+    def get_message(self, message_number, default="Skoryguj postawę"):
+        if message_number < len(self.messages):
+            return self.messages[message_number]
+        return default
+
+    
     
     
 class LowReady(Exercise):
@@ -290,16 +296,11 @@ class LowReady(Exercise):
 class StandingStance(Exercise):
     def __init__(self):
         super().__init__("StandingStance")
-        messages = tts_messages.get("CwiczenieStojaca", [])
-
-        def get_message(message_number, default="Skoryguj postawę"):
-            if message_number < len(messages):
-                return messages[message_number]
-            return default
-
+        self.messages = tts_messages.get("CwiczenieStojaca", [])
+        
         legs_front = [
-            Condition([24, 26, 28], degree=165, tolerance=0.15, message=get_message(0)),
-            Condition([23, 25, 27], degree=165, tolerance=0.15, message=get_message(0)) 
+            Condition([24, 26, 28], degree=165, tolerance=0.15, message=self.get_message(0)),
+            Condition([23, 25, 27], degree=165, tolerance=0.15, message=self.get_message(0)) 
         ]
         legs_side = [
             Condition([23, 25, 27], degree=165, tolerance=0.15, message="Zegnij mocniej kolana (widok z boku)")
@@ -315,7 +316,7 @@ class StandingStance(Exercise):
         ]
 
         arms_front = [
-            Condition([23, 11, 13], degree=20, tolerance=0.5, message=get_message(1))    
+            Condition([23, 11, 13], degree=20, tolerance=0.5, message=self.get_message(1))    
         ]
         arms_side = [
             Condition([11, 13, 15], degree=130, tolerance=0.2, message="Skoryguj wysokość uniesienia broni")
@@ -343,4 +344,54 @@ class StandingStance(Exercise):
         self._currentState.start()
         self._timeOfStateStart = self._currentState.startTime
            
-           
+class KneelingStance(Exercise):
+    def __init__(self):
+        super().__init__("KneelingStance")
+        self.messages = tts_messages.get("CwiczenieStojaca", [])
+        
+        legs_front = [
+            Condition([24, 26, 28], degree=155, tolerance=0.15, message=self.get_message(0)),#lewa noga
+            Condition([23, 25, 27], degree=40, tolerance=0.45, message=self.get_message(0)) 
+        ]
+        legs_side = [
+            Condition([24, 26, 28], degree=100, tolerance=0.15, message=self.get_message(0)),#lewa noga
+            Condition([23, 25, 27], degree=85, tolerance=0.15, message="Zegnij mocniej kolana (widok z boku)")
+        ]
+
+        torso_front = [
+            Condition([12, 24, 26], degree=170, tolerance=0.1, message="Ustaw tułów frontalnie"), 
+            Condition([11, 23, 25], degree=170, tolerance=0.1, message="Ustaw tułów frontalnie")
+        ]
+        torso_side = [
+            Condition([25, 23, 1], degree=170, tolerance=0.1, message="Ustaw tułów frontalnie"), 
+
+        ]
+
+        arms_front = [
+            Condition([23, 11, 13], degree=20, tolerance=0.5, message=self.get_message(1))    
+        ]
+        arms_side = [
+            Condition([11, 13, 15], degree=130, tolerance=0.2, message="Skoryguj wysokość uniesienia broni")
+        ]
+
+        self._states["Legs"] = State(
+            conditionFront=legs_front,
+            conditionSide=legs_side,
+            messege="Skoncentruj się na nogach i ugięciu kolan."
+        )
+
+        self._states["LegsTorso"] = State(
+            conditionFront=legs_front + torso_front,
+            conditionSide=legs_side + torso_side,
+            messege="Dobrze, teraz wyprostuj i pochyl lekko tułów."
+        )
+
+        self._states["LegsTorsoArms"] = State(
+            conditionFront=legs_front + torso_front + arms_front,
+            conditionSide=legs_side + torso_side + arms_side,
+            messege="Złóż się do strzału. Zablokuj ramiona w ramie."
+        )
+
+        self._currentState = self._states.get("Legs")
+        self._currentState.start()
+        self._timeOfStateStart = self._currentState.startTime
