@@ -161,6 +161,12 @@ class MenuScreen(Screen):
         if not self.detector_front:
             return
 
+        if self.cursor.parent:
+            if self.cursor.parent.children[0] != self.cursor:
+                parent = self.cursor.parent
+                parent.remove_widget(self.cursor)
+                parent.add_widget(self.cursor)
+
         interaction_points = []
         for idx in [15, 17, 19, 16, 18, 20]:
             lm = self.detector_front.get_landmark_cords(idx)

@@ -89,5 +89,14 @@ class TTS:
             self.message_queue.put(phrase)
 
     def stop(self):
-        """Zatrzymuje całkowicie wątek"""
-        self.message_queue.put(None)
+        with self.message_queue.mutex:
+            self.message_queue.queue.clear()
+        Clock.schedule_once(self._force_stop, 0)
+
+    def _force_stop(self, dt):
+        if getattr(self, '_current_sound', None):
+            self._current_sound.stop()
+            self._current_sound.unload()
+            self._current_sound = None
+
+        self.is_speaking = False

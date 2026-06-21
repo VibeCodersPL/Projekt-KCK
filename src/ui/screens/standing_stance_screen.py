@@ -24,7 +24,7 @@ class StandingStanceScreen(Screen):
         root = AnchorLayout(anchor_x='center', anchor_y='center')
         layout = BoxLayout(orientation='vertical', size_hint=(None, None), size=(1000, 700), spacing=20)
         self.image_widget = Image(
-            source="./assets/postawa_stojaca.png",
+            source="ui/assets/postawa_stojaca.png",
             size_hint=(1, 0.8),
             allow_stretch=True,
             keep_ratio=True
@@ -46,7 +46,7 @@ class StandingStanceScreen(Screen):
         root.add_widget(layout)
         self.add_widget(root)
         self.cursor = Image(
-            source='./assets/lapka1.png',
+            source='ui/assets/lapka1.png',
             size_hint=(None, None),
             size=(100, 100),
             pos=(-100, -100)
@@ -77,12 +77,12 @@ class StandingStanceScreen(Screen):
 
     def speak_phrases(self, dt):
         caly_tekst = self.phrases.get("WzorowyPokazStojaca", [])
-        for tekst in caly_tekst:
-            if tekst.strip():
-                self.tts.speak(tekst)
+        pelne_zdanie = " ".join([tekst.strip() for tekst in caly_tekst if tekst.strip()])
+        if pelne_zdanie:
+            self.tts.speak(pelne_zdanie)
 
     def _late_camera_init(self, dt):
-        self.cap = cv2.VideoCapture(0)
+        self.cap = cv2.VideoCapture(1)
         if self.cap.isOpened():
             self.update = Clock.schedule_interval(self.update_frame, 1 / 30)
         else:
@@ -92,7 +92,7 @@ class StandingStanceScreen(Screen):
         if self.speak_event:
             self.speak_event.cancel()
         if self.tts:
-            self.tts.interrupt()
+            self.tts.stop()
         if self.update:
             self.update.cancel()
             self.update = None
@@ -103,7 +103,7 @@ class StandingStanceScreen(Screen):
         self.clean()
         self.button_hover = None
         self.cursor.pos = (-100, -100)
-        self.cursor.source = "./assets/lapka1.png"
+        self.cursor.source = "ui/assets/lapka1.png"
 
     def update_frame(self, dt):
         if not self.cap or not self.cap.isOpened():
@@ -115,7 +115,7 @@ class StandingStanceScreen(Screen):
         frame = cv2.flip(frame, 1)
         _, result = self.detector.process_frame(frame)
         cursor_pos = None
-        cursor_pos = self.detector.getLandmarkCords(19);
+        cursor_pos = self.detector.get_landmark_cords(19);
 
         if cursor_pos is not None:
             x, y = cursor_pos
@@ -133,7 +133,7 @@ class StandingStanceScreen(Screen):
                     self.clean()
                     self.button_hover = collision
                     self.button_hover_start = time.time()
-                    self.cursor.source = "./assets/lapka2.png"
+                    self.cursor.source = "ui/assets/lapka2.png"
                     with self.button_hover.canvas.after:
                         self.fill_color = Color(0.1, 0.8, 0.2, 0.5)
                         self.fill_rectangle = RoundedRectangle(
@@ -152,18 +152,18 @@ class StandingStanceScreen(Screen):
                             self.clean()
                             self.change_screen("WzorowyPokaz")
                             self.button_hover = None
-                            self.cursor.source = "./assets/lapka1.png"
+                            self.cursor.source = "ui/assets/lapka1.png"
             else:
                 if self.button_hover is not None:
                     self.clean()
                     self.button_hover = None
-                    self.cursor.source = "./assets/lapka1.png"
+                    self.cursor.source = "ui/assets/lapka1.png"
         else:
             self.cursor.pos = (-100, -100)
             if self.button_hover is not None:
                 self.clean()
                 self.button_hover = None
-                self.cursor.source = "./assets/lapka1.png"
+                self.cursor.source = "ui/assets/lapka1.png"
 
     def change_screen(self, target_screen, *args):
         self.manager.current = target_screen
