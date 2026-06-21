@@ -66,12 +66,12 @@ class PostawaStojaca(Screen):
 
     def speak_phrases(self, dt):
         caly_tekst = self.phrases.get("WzorowyPokazStojaca", [])
-        for tekst in caly_tekst:
-            if tekst.strip():
-                self.tts.speak(tekst)
+        pelne_zdanie = " ".join([tekst.strip() for tekst in caly_tekst if tekst.strip()])
+        if pelne_zdanie:
+            self.tts.speak(pelne_zdanie)
 
     def _late_camera_init(self, dt):
-        self.cap = cv2.VideoCapture(0)
+        self.cap = cv2.VideoCapture(1)
         if self.cap.isOpened():
             self.update = Clock.schedule_interval(self.update_frame, 1 / 30)
         else:
@@ -81,7 +81,7 @@ class PostawaStojaca(Screen):
         if self.speak_event:
             self.speak_event.cancel()
         if self.tts:
-            self.tts.interrupt()
+            self.tts.stop()
         if self.update:
             self.update.cancel()
             self.update = None
