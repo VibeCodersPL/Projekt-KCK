@@ -37,7 +37,7 @@ class HoverableRoundedButton(RoundedButton):
             if self.hover_frames >= 0:
                 self.hover_frames += 1
                 if self.hover_frames >= self.hover_threshold:
-                    self.trigger_action(0)  # KIVY MAGIA: Symuluje fizyczne kliknięcie!
+                    self.trigger_action(0)
                     self.hover_frames = -30 # Ustawiamy cooldown
         else:
             if self.hover_frames > 0:
