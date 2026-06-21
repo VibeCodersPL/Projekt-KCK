@@ -1,20 +1,30 @@
 import json
-from windows.Wzorowy_Pokaz import *
-from tts.tts import *
+import time
+import cv2
+from kivy.core.window import Window
+from kivy.graphics import Color, RoundedRectangle
+from kivy.properties import partial
+from kivy.uix.anchorlayout import AnchorLayout
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.image import Image
+from kivy.uix.screenmanager import Screen
+from core.tts import *
 from pathlib import Path
 
+from ui.components.rounded_button import RoundedButton
 
-class PostawaKleczaca(Screen):
+
+class StandingStanceScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.speak_event = None
-        JSON_PATH = Path(__file__).resolve().parents[1] / "tts" / "phrases.json"
+        JSON_PATH = Path(__file__).resolve().parents[2] / "core" / "phrases.json"
         with open(JSON_PATH, "r", encoding="utf-8") as f:
             self.phrases = json.load(f)
         root = AnchorLayout(anchor_x='center', anchor_y='center')
         layout = BoxLayout(orientation='vertical', size_hint=(None, None), size=(1000, 700), spacing=20)
         self.image_widget = Image(
-            source="./assets/postawa_kleczaca.png",
+            source="./assets/postawa_stojaca.png",
             size_hint=(1, 0.8),
             allow_stretch=True,
             keep_ratio=True
@@ -36,7 +46,7 @@ class PostawaKleczaca(Screen):
         root.add_widget(layout)
         self.add_widget(root)
         self.cursor = Image(
-            source='../assets/lapka1.png',
+            source='./assets/lapka1.png',
             size_hint=(None, None),
             size=(100, 100),
             pos=(-100, -100)
@@ -66,7 +76,7 @@ class PostawaKleczaca(Screen):
         self.speak_event = Clock.schedule_once(self.speak_phrases, 2)
 
     def speak_phrases(self, dt):
-        caly_tekst = self.phrases.get("WzorowyPokazKleczaca", [])
+        caly_tekst = self.phrases.get("WzorowyPokazStojaca", [])
         for tekst in caly_tekst:
             if tekst.strip():
                 self.tts.speak(tekst)

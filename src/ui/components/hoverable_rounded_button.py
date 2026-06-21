@@ -1,4 +1,4 @@
-from layout_api.components.RoundedButton import *
+from ui.components.rounded_button import *
 class HoverableRoundedButton(RoundedButton):
     def __init__(self, hover_threshold=30, **kwargs):
         super().__init__(**kwargs)

@@ -1,4 +1,3 @@
-import math
 
 import cv2
 import mediapipe as mp
@@ -6,20 +5,20 @@ import time
 import os
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
-import detection.excersises as ex
 
 class BaseDetection:
+    POSE_CONNECTIONS = [
+        (11, 12), (11, 13), (13, 15), (12, 14), (14, 16),  # Ramiona
+        (11, 23), (12, 24), (23, 24),  # Tułów
+        (16, 18), (16, 22), (16, 20), (18, 20),  # Prawa dłoń
+        (15, 21), (15, 19), (15, 17), (17, 19),  # Lewa dłoń
+        (24, 26), (26, 28), (28, 30), (28, 32), (30, 32),  # Prawa noga
+        (23, 25), (25, 27), (27, 31), (27, 29), (31, 29),  # Lewa noga
+        (8, 6), (6, 5), (5, 4), (4, 0), (0, 1), (1, 2), (2, 3), (3, 7), (10, 9)  # Twarz
+    ]
+
     def __init__(self):
-        self.POSE_CONNECTIONS = [
-            (11, 12), (11, 13), (13, 15), (12, 14), (14, 16),  # Ramiona
-            (11, 23), (12, 24), (23, 24),  # Tułów
-            (16, 18), (16, 22), (16, 20), (18, 20),  # Prawa dłoń
-            (15, 21), (15, 19), (15, 17), (17, 19),  # Lewa dłoń
-            (24, 26), (26, 28), (28, 30), (28, 32), (30, 32),  # Prawa noga
-            (23, 25), (25, 27), (27, 31), (27, 29), (31, 29),  # Lewa noga
-            (8,6),(6,5),(5,4),(4,0),(0,1),(1,2),(2,3),(3,7),(10,9) #Twarz
-        ]
-        
+
         self.landmarks = []
 
         current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -64,54 +63,34 @@ class BaseDetection:
 
         return frame, result
 
-    def connectLandmarks(self, frame, startLandmark, endLandmark, color:tuple[3]):
-        if not self.landmarks or len(self.landmarks) <= max(startLandmark, endLandmark):
+    def connect_landmarks(self, frame, start_landmark, end_landmark, color:tuple[3]):
+        if not self.landmarks or len(self.landmarks) <= max(start_landmark, end_landmark):
             return frame # Zwracamy klatkę bez rysowania, jeśli nie ma kogo rysować
 
-        startPoint = self.landmarks[startLandmark]
-        endPoint = self.landmarks[endLandmark]
+        start_point = self.landmarks[start_landmark]
+        end_point = self.landmarks[end_landmark]
         h, w, _ = frame.shape
         cv2.line(frame,
-                        (int(startPoint.x * w), int(startPoint.y * h)),
-                        (int(endPoint.x * w), int(endPoint.y * h)),
+                        (int(start_point.x * w), int(start_point.y * h)),
+                        (int(end_point.x * w), int(end_point.y * h)),
                         color, 2)
         return frame
 
-    def getLandmarks(self):
+    def get_landmarks(self):
         return self.landmarks
 
-    def getLandmarkCords(self, landmarkNumber:int):
-        if not self.landmarks or len(self.landmarks) <= landmarkNumber:
+    def get_landmark_cords(self, landmark_number:int):
+        if not self.landmarks or len(self.landmarks) <= landmark_number:
             return None
-        resLandmark = self.landmarks[landmarkNumber]
-        if resLandmark.visibility > 0:
-            return (resLandmark.x, resLandmark.y)
+        res_landmark = self.landmarks[landmark_number]
+        if res_landmark.visibility > 0:
+            return (res_landmark.x, res_landmark.y)
         return None
     
-    def printDegOnLandmark(self,frame, landmark, degree:int): 
+    def print_deg_on_landmark(self, frame, landmark, degree:int):
         h, w, _ = frame.shape    
         frame = cv2.putText(frame, str(degree) , (int(self.landmarks[landmark].x * w), int(self.landmarks[landmark].y * h)), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255, 255), 2)            
         return frame
-    
-    def _printDegCircOnLandmark(self,frame, landmark, degree:int): 
-        h, w, _ = frame.shape    
-        frame = cv2.ellipse(
-            frame, 
-            (int(landmark.x * w), int(landmark.y * h)), # Centrum
-            (140, 140),   # Rozmiar (osie)
-            0,          # Obrót elipsy
-            0,          # Start kąta
-            degree,     # Koniec kąta
-            (255, 0, 0),# Kolor BGR
-            -1           # Grubość linii 
-            
-        )
-
-        return frame
-    
-
-    
-
 
     def close(self):
         self.landmarker.close()

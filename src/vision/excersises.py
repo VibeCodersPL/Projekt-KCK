@@ -2,18 +2,17 @@ import math
 from typing import List
 from time import time
 import json
-from tts.tts import TTS
 from pathlib import Path
 
 def load_json():
-    JSON_PATH = Path(__file__).resolve().parents[1] / "tts" / "phrases.json"
+    JSON_PATH = Path(__file__).resolve().parents[1] / "core" / "phrases.json"
     with open(JSON_PATH, "r", encoding="utf-8") as f:
         return json.load(f)
 
 tts_messages = load_json()
 
 class Condition:
-    def __init__(self, landmarks: List[int] = [11,13,15], degree: int = 160, tolerance: int = 0.3, conditionMet:bool = True, message:str = "Skoryguj postawę"):
+    def __init__(self, landmarks: List[int] = [11,13,15], degree: int = 160, tolerance: int = 0.3, condition_met:bool = True, message:str = "Skoryguj postawę"):
         """Representation of one condition of excersise 
 
         Args:
@@ -24,32 +23,32 @@ class Condition:
         self.landmarks = landmarks
         self.degree = degree
         self.tolerance = tolerance
-        self.conditionMet = conditionMet
+        self.condition_met = condition_met
         self.message = message
 
 
 class State:
     
-    def __init__(self, conditionFront:List[Condition] = [Condition()], conditionSide:List[Condition] = [Condition()], messege:str = "DEFAULT"):
+    def __init__(self, condition_front:List[Condition] = [Condition()], condition_side:List[Condition] = [Condition()], messege:str = "DEFAULT"):
         """Representation of one state of excersise
 
         Args:
-            conditionFront (List[Condition], optional): List of front conditions. Defaults to [Condition()].
-            conditionSide (List[Condition], optional): List of side conditions. Defaults to [Condition()].
+            condition_front (List[Condition], optional): List of front conditions. Defaults to [Condition()].
+            condition_side (List[Condition], optional): List of side conditions. Defaults to [Condition()].
             messege (str, optional): state messege. Defaults to "DEFAULT".
         """        ''''''
-        self.conditonFront = conditionFront
-        self.conditonSide = conditionSide
+        self.condition_front = condition_front
+        self.conditon_side = condition_side
         self.messege = messege
-        self.startTime = 0
-        self.durationStats = []
-        self.correctnessMetric = []
+        self.start_time = 0
+        self.duration_stats = []
+        self.correctness_metric = []
     
         
     def start(self):
         """Sets start time for the excersise
         """        ''''''
-        self.startTime = time()
+        self.start_time = time()
         
     def stop(self, metric):
         """Clens start time for excersie
@@ -57,12 +56,12 @@ class State:
         Returns:
             time in second: return duration time of excersise
         """
-        timeOfStart = self.startTime        
-        self.startTime = 0
+        timeOfStart = self.start_time
+        self.start_time = 0
         duration = time() - timeOfStart
         
-        self.durationStats.append(duration) 
-        self.correctnessMetric.append(metric)
+        self.duration_stats.append(duration)
+        self.correctness_metric.append(metric)
         return duration
 
 
@@ -76,30 +75,30 @@ class Exercise:
         Args:
             name (str): name of excersise
         """
-        self._excersiseName = name
-        self.__frameCounter = 0
-        self.__lastFramesCorrectnessArray: list[bool] = [False] * self.__CORRECT_FRAMES
-        self.__lastFramesCorrectnessMetricArray: list[bool] = [False] * self.__CORRECT_FRAMES
+        self._excersise_name = name
+        self.__frame_counter = 0
+        self.__last_frames_correctness_array: list[bool] = [False] * self.__CORRECT_FRAMES
+        self.__last_frames_correctness_metric_array: list[bool] = [False] * self.__CORRECT_FRAMES
         self._states: dict[str, State] = {}
         self._states["DEFAULT"] = State()
-        self._currentState = self._states.get("DEFAULT")
-        self._timeOfExcersiseStart = 0
+        self._current_state = self._states.get("DEFAULT")
+        self._time_of_excersise_start = 0
         self.is_running = False
         self.has_run = False
         self.is_saved = False
-        self._currentState.start()
+        self._current_state.start()
         self.messages = None
     def start_excersise(self):
         self.is_running = True
         self.has_run = False
         self.is_saved = False
-        self._currentState.start()
-        self._timeOfExcersiseStart = time()
+        self._current_state.start()
+        self._time_of_excersise_start = time()
         
     def stop_excersise(self):
         self.is_running = False
         self.has_run = True
-        return time() - self._timeOfExcersiseStart
+        return time() - self._time_of_excersise_start
         
     def toggle_running(self) -> bool:
         """Przełącza stan ćwiczenia. Zwraca True jeśli wystartowało, False jeśli zatrzymano."""
@@ -112,41 +111,41 @@ class Exercise:
     def mark_as_saved(self):
         self.is_saved = True
 
-    def checkExcersise(self, landmarksFront = None, landmarksSide = None):
+    def check_excersise(self, landmarks_front = None, landmarks_side = None):
         """check one frame for correctness
 
         Args:
-            landmarksFront (List[Condition], optional): list of front landmarks. Defaults to None.
-            landmarksSide (List[Condition], optional): list od side landmarks. Defaults to None.
+            landmarks_front (List[Condition], optional): list of front landmarks. Defaults to None.
+            landmarks_side (List[Condition], optional): list od side landmarks. Defaults to None.
 
         Returns:
             bool: flag for excersise being done correctly
         """        
         # ZABEZPIECZENIE: Jeśli nie ma jakichkolwiek punktów (np. kamera odłączona lub brak sylwetki)
-        if not landmarksFront or not landmarksSide:
-            self.__setLastFrameValue(False, 0.0)
+        if not landmarks_front or not landmarks_side:
+            self.__set_last_frame_value(False, 0.0)
             return False, False
                 
-        isAllConditionsMet = True
+        is_all_conditions_met = True
         total_score = 0.0
         conditions_count = 0
         
         def evaluate_conditions(landmarks, conditions):
-            nonlocal isAllConditionsMet, total_score, conditions_count
+            nonlocal is_all_conditions_met, total_score, conditions_count
             
             # ZABEZPIECZENIE przed pustą listą landmarków
             if not landmarks or len(landmarks) == 0:
-                isAllConditionsMet = False
+                is_all_conditions_met = False
                 return
 
             for cond in conditions:
                 # ZABEZPIECZENIE: Upewnij się, że tablica ma wystarczająco elementów
                 if len(landmarks) <= max(cond.landmarks):
-                    cond.conditionMet = False
-                    isAllConditionsMet = False
+                    cond.condition_met = False
+                    is_all_conditions_met = False
                     continue
 
-                angle = self.calculateThreePointAngle(
+                angle = self.calculate_three_point_angle(
                     landmarks[cond.landmarks[0]], 
                     landmarks[cond.landmarks[1]], 
                     landmarks[cond.landmarks[2]]
@@ -164,46 +163,46 @@ class Exercise:
                 conditions_count += 1
                 
                 if error > max_error:
-                    cond.conditionMet = False
-                    isAllConditionsMet = False
+                    cond.condition_met = False
+                    is_all_conditions_met = False
                 else:
-                    cond.conditionMet = True
+                    cond.condition_met = True
         
-        if landmarksFront:
-            evaluate_conditions(landmarksFront, self._currentState.conditonFront)
+        if landmarks_front:
+            evaluate_conditions(landmarks_front, self._current_state.condition_front)
         
-        if landmarksSide:
-            evaluate_conditions(landmarksSide, self._currentState.conditonSide)
+        if landmarks_side:
+            evaluate_conditions(landmarks_side, self._current_state.conditon_side)
         
         frame_score = (total_score / conditions_count) if conditions_count > 0 else 0.0
         
-        if not isAllConditionsMet:
-            self.__setLastFrameValue(False, frame_score)
+        if not is_all_conditions_met:
+            self.__set_last_frame_value(False, frame_score)
             return False, False
         
-        self.__setLastFrameValue(True, frame_score)
-        return True, self.__isCompletedState()
+        self.__set_last_frame_value(True, frame_score)
+        return True, self.__is_completed_state()
 
-    def __isCompletedState(self):
+    def __is_completed_state(self):
         """checks if state of excersise is completed
 
         Returns:
             bool: flag for completion of step of excersise
         """        
-        return (sum(self.__lastFramesCorrectnessArray) / len(self.__lastFramesCorrectnessArray) == 1)
+        return (sum(self.__last_frames_correctness_array) / len(self.__last_frames_correctness_array) == 1)
    
-    def __setLastFrameValue(self, value:bool, metric:bool | None = None):
+    def __set_last_frame_value(self, value:bool, metric: bool | None = None):
         """sets last frame value
 
         Args:
             value (int): value of last frame correctness
         """        
-        self.__lastFramesCorrectnessArray[self.__frameCounter] = value
+        self.__last_frames_correctness_array[self.__frame_counter] = value
         if metric is not None:
-            self.__lastFramesCorrectnessMetricArray[self.__frameCounter] = metric
-        self.__frameCounter = (self.__frameCounter + 1) % self.__CORRECT_FRAMES
+            self.__last_frames_correctness_metric_array[self.__frame_counter] = metric
+        self.__frame_counter = (self.__frame_counter + 1) % self.__CORRECT_FRAMES
     
-    def calculateThreePointAngle(self,leftP, midP, rightP) -> int:
+    def calculate_three_point_angle(self, leftP, midP, rightP) -> int:
         """calculates angle of three points
 
         Args:
@@ -222,56 +221,56 @@ class Exercise:
         except ZeroDivisionError:
             return 0
     
-    def setState(self, stateName: str | None = None):
+    def set_state(self, state_name: str | None = None):
         """sets state of excersise to next or to named like stateName arg
 
         Args:
-            stateName (str | None, optional): next step name. Defaults to None.
+            state_name (str | None, optional): next step name. Defaults to None.
         Returns:
             tuple: current step name and duration of previous step, or just current step name if we are trying to set the same step
         """
-        currentStateName = next(k for k, v in self._states.items() if v == self._currentState)    
+        current_state_name = next(k for k, v in self._states.items() if v == self._current_state)
 
-        if stateName == currentStateName:
-            return currentStateName
+        if state_name == current_state_name:
+            return current_state_name
 
-        avg_metric_of_correct_frames = sum(self.__lastFramesCorrectnessMetricArray) / len(self.__lastFramesCorrectnessMetricArray)
-        stateDuration = self._currentState.stop(avg_metric_of_correct_frames)
+        avg_metric_of_correct_frames = sum(self.__last_frames_correctness_metric_array) / len(self.__last_frames_correctness_metric_array)
+        state_duration = self._current_state.stop(avg_metric_of_correct_frames)
         
-        self.__lastFramesCorrectnessArray = [False] * self.__CORRECT_FRAMES
-        self.__lastFramesCorrectnessMetricArray = [0.0] * self.__CORRECT_FRAMES
+        self.__last_frames_correctness_array = [False] * self.__CORRECT_FRAMES
+        self.__last_frames_correctness_metric_array = [0.0] * self.__CORRECT_FRAMES
 
-        if stateName is None:
-            statesNamesList = list(self._states.keys())
-            currentIndex = statesNamesList.index(currentStateName)
-            stateName = statesNamesList[(currentIndex + 1) % len(statesNamesList)]
+        if state_name is None:
+            states_names_list = list(self._states.keys())
+            current_index = states_names_list.index(current_state_name)
+            state_name = states_names_list[(current_index + 1) % len(states_names_list)]
         else:
-            if stateName not in self._states:
-                raise ValueError(f"Stan '{stateName}' nie istnieje!")
+            if state_name not in self._states:
+                raise ValueError(f"Stan '{state_name}' nie istnieje!")
 
-        self._currentState = self._states[stateName] 
-        self._currentState.start()
+        self._current_state = self._states[state_name]
+        self._current_state.start()
 
-        return stateName, (stateDuration - self.__CORRECT_FRAMES / self.__FRAMES_PER_SECOND)
+        return state_name, (state_duration - self.__CORRECT_FRAMES / self.__FRAMES_PER_SECOND)
 
-    def getStateMessage(self):
+    def get_state_message(self):
         """returns state messege
 
         Returns:
             str: state messege
         """        
-        return (self._currentState.messege)
+        return (self._current_state.messege)
     
-    def getStateConditions(self):
-        return self._currentState.conditonFront, self._currentState.conditonSide
+    def get_state_conditions(self):
+        return self._current_state.condition_front, self._current_state.conditon_side
     
-    def getEndStats(self):
+    def get_end_stats(self):
         """return end stats of each excersise
         """ 
         output = {}   
         for k, v in self._states.items():
             v:State
-            output[k] = (v.durationStats,v.correctnessMetric)
+            output[k] = (v.duration_stats, v.correctness_metric)
             
         return output
     
@@ -287,10 +286,10 @@ class LowReady(Exercise):
     def __init__(self):
         super().__init__("LowReady")
                 
-        conditionList = [Condition([23,25,27]),Condition([24,26,28]), Condition()]
+        condition_list = [Condition([23,25,27]),Condition([24,26,28]), Condition()]
         
-        self._states["START"] = State(conditionFront=conditionList,conditionSide=conditionList, messege = "START")
-        self._states["END"] = State(conditionFront=conditionList,conditionSide=conditionList, messege = "END")     
+        self._states["START"] = State(condition_front=condition_list, condition_side=condition_list, messege ="START")
+        self._states["END"] = State(condition_front=condition_list, condition_side=condition_list, messege ="END")
             
 
 class StandingStance(Exercise):
@@ -323,26 +322,26 @@ class StandingStance(Exercise):
         ]
 
         self._states["Legs"] = State(
-            conditionFront=legs_front,
-            conditionSide=legs_side,
+            condition_front=legs_front,
+            condition_side=legs_side,
             messege="Skoncentruj się na nogach i ugięciu kolan."
         )
 
         self._states["LegsTorso"] = State(
-            conditionFront=legs_front + torso_front,
-            conditionSide=legs_side + torso_side,
+            condition_front=legs_front + torso_front,
+            condition_side=legs_side + torso_side,
             messege="Dobrze, teraz wyprostuj i pochyl lekko tułów."
         )
 
         self._states["LegsTorsoArms"] = State(
-            conditionFront=legs_front + torso_front + arms_front,
-            conditionSide=legs_side + torso_side + arms_side,
+            condition_front=legs_front + torso_front + arms_front,
+            condition_side=legs_side + torso_side + arms_side,
             messege="Złóż się do strzału. Zablokuj ramiona w ramie."
         )
 
         self._currentState = self._states.get("Legs")
         self._currentState.start()
-        self._timeOfStateStart = self._currentState.startTime
+        self._timeOfStateStart = self._currentState.start_time
            
 class KneelingStance(Exercise):
     def __init__(self):
@@ -375,23 +374,23 @@ class KneelingStance(Exercise):
         ]
 
         self._states["Legs"] = State(
-            conditionFront=legs_front,
-            conditionSide=legs_side,
+            condition_front=legs_front,
+            condition_side=legs_side,
             messege="Skoncentruj się na nogach i ugięciu kolan."
         )
 
         self._states["LegsTorso"] = State(
-            conditionFront=legs_front + torso_front,
-            conditionSide=legs_side + torso_side,
+            condition_front=legs_front + torso_front,
+            condition_side=legs_side + torso_side,
             messege="Dobrze, teraz wyprostuj i pochyl lekko tułów."
         )
 
         self._states["LegsTorsoArms"] = State(
-            conditionFront=legs_front + torso_front + arms_front,
-            conditionSide=legs_side + torso_side + arms_side,
+            condition_front=legs_front + torso_front + arms_front,
+            condition_side=legs_side + torso_side + arms_side,
             messege="Złóż się do strzału. Zablokuj ramiona w ramie."
         )
 
-        self._currentState = self._states.get("Legs")
-        self._currentState.start()
-        self._timeOfStateStart = self._currentState.startTime
+        self._current_state = self._states.get("Legs")
+        self._current_state.start()
+        self._time_of_state_start = self._current_state.start_time

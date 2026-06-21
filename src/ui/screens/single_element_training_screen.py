@@ -1,8 +1,8 @@
-import detection.excersises as ex
-from layout_api.TwoCameraFrameWindow import TwoCameraFrameWindow as TCFW
-class Trening_Jednego_Elementu(TCFW):
-    def __init__(self, screenExcersise:ex.Exercise, **kwargs):
-        super().__init__(screenExcersise=screenExcersise,**kwargs)
+import vision.excersises as ex
+from ui.screens.two_camera_screen import TwoCameraScreen as TCFW
+class SingleElementTrainingScreen(TCFW):
+    def __init__(self, screen_excersise:ex.Exercise, **kwargs):
+        super().__init__(screen_excersise=screen_excersise, **kwargs)
 
     def on_start_click(self):
         print("Kliknięto START")

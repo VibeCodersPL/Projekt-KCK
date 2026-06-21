@@ -1,85 +1,54 @@
+import json
+import time
+
+import cv2
 from kivy.core.window import Window
+from kivy.graphics import Color, RoundedRectangle
 from kivy.properties import partial
 from kivy.uix.anchorlayout import AnchorLayout
-from kivy.uix.floatlayout import FloatLayout
-from kivy.uix.label import Label
-from kivy.uix.widget import Widget
-from kivy.uix.screenmanager import ScreenManager, Screen,NoTransition
-from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.button import Button
-from kivy.graphics import RoundedRectangle, Color
 from kivy.uix.image import Image
-from kivy.clock import Clock
+from kivy.uix.screenmanager import Screen
 
-from detection.base_detection import *
-from layout_api.components.RoundedButton import RoundedButton
-from windows.PostawaStojaca import *
-from windows.PostawaKleczaca import *
+from core.tts import *
+from pathlib import Path
+
+from ui.components.rounded_button import RoundedButton
 
 
-class WzorowyPokazScreen(Screen):
+class KneelingStanceScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        wid = Widget()
-        layout = BoxLayout(orientation='vertical', size_hint=(None, None), size=(1000, 630), spacing=20)
-        main_text = Label(
-            text='Wzorowy Pokaz',
-            font_size='50sp',
-            bold=True,
-            size_hint_y=None,
-            height=50
+        self.speak_event = None
+        JSON_PATH = Path(__file__).resolve().parents[2] / "core" / "phrases.json"
+        with open(JSON_PATH, "r", encoding="utf-8") as f:
+            self.phrases = json.load(f)
+        root = AnchorLayout(anchor_x='center', anchor_y='center')
+        layout = BoxLayout(orientation='vertical', size_hint=(None, None), size=(1000, 700), spacing=20)
+        self.image_widget = Image(
+            source="./assets/postawa_kleczaca.png",
+            size_hint=(1, 0.8),
+            allow_stretch=True,
+            keep_ratio=True
         )
-        layout.add_widget(main_text)
-        self.screen_mapping = {
-            'Postawa Stojąca': 'PostawaStojaca',
-            'Postawa klęcząca': 'PostawaKleczaca',
-            'Menu': 'menu'
-        }
+        layout.add_widget(self.image_widget)
         self.menu_buttons = []
-        blocks_layout = BoxLayout(orientation='horizontal', size_hint=(1, 1), spacing=20)
-        btn_stojaca = RoundedButton(
-            text='Postawa Stojąca',
-            font_size='36sp',
-            color=(1, 1, 1, 1),
-            bg_color=(0.15, 0.45, 0.85, 1),
-            radius=30,
-            bg_image="./assets/Postawa1.png"
-        )
-        btn_stojaca.bind(on_press=self.change_screen)
-        blocks_layout.add_widget(btn_stojaca)
-        self.menu_buttons.append(btn_stojaca)
-
-        btn_kleczaca = RoundedButton(
-            text='Postawa klęcząca',
-            font_size='36sp',
-            color=(1, 1, 1, 1),
-            bg_color=(0.15, 0.45, 0.85, 1),
-            radius=30,
-            bg_image="./assets/Postawa2.png"
-        )
-        btn_kleczaca.bind(on_press=self.change_screen)
-        blocks_layout.add_widget(btn_kleczaca)
-        self.menu_buttons.append(btn_kleczaca)
-
-        layout.add_widget(blocks_layout)
-        btn_menu = RoundedButton(
-            text='Menu',
+        btn_powrot = RoundedButton(
+            text='Powrót',
             font_size='36sp',
             color=(1, 1, 1, 1),
             bg_color=(0.85, 0.15, 0.15, 1),
             radius=30,
-            size_hint=(1, 0.3)
+            size_hint=(0.4, 0.2),
+            pos_hint={'center_x': 0.5}
         )
-        btn_menu.bind(on_press=self.change_screen)
-        layout.add_widget(btn_menu)
-        self.menu_buttons.append(btn_menu)
-        root = AnchorLayout(anchor_x='center', anchor_y='center')
-        root.add_widget(wid)
+        btn_powrot.bind(on_press=partial(self.change_screen, 'WzorowyPokaz'))
+        layout.add_widget(btn_powrot)
+        self.menu_buttons.append(btn_powrot)
         root.add_widget(layout)
         self.add_widget(root)
         self.cursor = Image(
-            source='./assets/lapka1.png',
+            source='../assets/lapka1.png',
             size_hint=(None, None),
             size=(100, 100),
             pos=(-100, -100)
@@ -102,9 +71,17 @@ class WzorowyPokazScreen(Screen):
         self.fill_color = None
         self.fill_rectangle = None
 
-    def on_enter(self):
+    def on_enter(self, *args):
         self.detector = self.manager.shared_detector_front
+        self.tts = self.manager.shared_tts
         Clock.schedule_once(self._late_camera_init, 0.2)
+        self.speak_event = Clock.schedule_once(self.speak_phrases, 2)
+
+    def speak_phrases(self, dt):
+        caly_tekst = self.phrases.get("WzorowyPokazKleczaca", [])
+        for tekst in caly_tekst:
+            if tekst.strip():
+                self.tts.speak(tekst)
 
     def _late_camera_init(self, dt):
         self.cap = cv2.VideoCapture(0)
@@ -113,7 +90,11 @@ class WzorowyPokazScreen(Screen):
         else:
             print("Kamera nadal zablokowana przez system.")
 
-    def on_leave(self):
+    def on_leave(self, *args):
+        if self.speak_event:
+            self.speak_event.cancel()
+        if self.tts:
+            self.tts.interrupt()
         if self.update:
             self.update.cancel()
             self.update = None
@@ -121,7 +102,6 @@ class WzorowyPokazScreen(Screen):
             self.cap.release()
             self.cap = None
         self.detector = None
-
         self.clean()
         self.button_hover = None
         self.cursor.pos = (-100, -100)
@@ -172,7 +152,7 @@ class WzorowyPokazScreen(Screen):
 
                         if elapsed_time > 2.0:
                             self.clean()
-                            self.change_screen(collision)
+                            self.change_screen("WzorowyPokaz")
                             self.button_hover = None
                             self.cursor.source = "./assets/lapka1.png"
             else:
@@ -187,23 +167,5 @@ class WzorowyPokazScreen(Screen):
                 self.button_hover = None
                 self.cursor.source = "./assets/lapka1.png"
 
-    def change_screen(self, instance):
-        target_screen = self.screen_mapping.get(instance.text)
-        if target_screen:
-            self.manager.current = target_screen
-
-
-class WzorowyPokaz(App):
-
-    def build(self):
-        Window.fullscreen = 'auto'
-        sm = ScreenManager(transition=NoTransition())
-        sm.shared_detector = BaseDetection()
-        sm.add_widget(WzorowyPokazScreen(name='WzorowyPokaz'))
-        sm.add_widget(PostawaStojaca(name='PostawaStojaca'))
-        sm.add_widget(PostawaKleczaca(name='PostawaKleczaca'))
-        return sm
-
-
-if __name__ == '__main__':
-    WzorowyPokaz().run()
+    def change_screen(self, target_screen, *args):
+        self.manager.current = target_screen

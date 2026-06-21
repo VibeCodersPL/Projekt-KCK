@@ -1,38 +1,33 @@
-from typing import List
-
-from kivy.core.image import Texture
 from kivy.uix.label import Label
 from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.button import Button
 from kivy.uix.popup import Popup
-from layout_api.TwoCameraFrameWindow import TwoCameraFrameWindow as TCFW
-from layout_api.components.RoundedButton import *
-import detection.excersises as ex
-from tts.tts import TTS
+from ui.screens.two_camera_screen import TwoCameraScreen as TCFW
+from ui.components.rounded_button import *
+import vision.excersises as ex
 from time import time
 
-class TreningWspierany(TCFW):
-    def __init__(self, screenExcersise:ex.Exercise, **kwargs):
-        super().__init__(screenExcersise=screenExcersise,**kwargs)
+class SupportedTrainingScreen(TCFW):
+    def __init__(self, screen_excersise:ex.Exercise, **kwargs):
+        super().__init__(screen_excersise=screen_excersise, **kwargs)
         
         self.tts = None 
         self.last_tts_message = 0
         self.tts_time = 4
         
-        self.debug = True
+        self.debug = False
 
     def on_enter(self):
         super().on_enter()
         self.tts = self.manager.shared_tts
         
-        if self.debug and self.screenExcersise:
-            self.screenExcersise.start_excersise()
+        if self.debug and self.screen_excersise:
+            self.screen_excersise.start_excersise()
 
     def process_frame(self, frame, detector, landmarks, conditions, current_message):
             message = current_message
             
             for cond in conditions:
-                if cond.conditionMet:
+                if cond.condition_met:
                     color = (0, 255, 0)
                 else:
                     color = (0, 0, 255)
@@ -40,15 +35,15 @@ class TreningWspierany(TCFW):
                         message = cond.message
                 
                 if self.debug and landmarks:
-                    angle = self.screenExcersise.calculateThreePointAngle(
+                    angle = self.screen_excersise.calculate_three_point_angle(
                         landmarks[cond.landmarks[0]],
                         landmarks[cond.landmarks[1]],
                         landmarks[cond.landmarks[2]]
                     )
-                    detector.printDegOnLandmark(frame, cond.landmarks[1], angle)
+                    detector.print_deg_on_landmark(frame, cond.landmarks[1], angle)
                 
-                frame = detector.connectLandmarks(frame, cond.landmarks[0], cond.landmarks[1], color)
-                frame = detector.connectLandmarks(frame, cond.landmarks[1], cond.landmarks[2], color)
+                frame = detector.connect_landmarks(frame, cond.landmarks[0], cond.landmarks[1], color)
+                frame = detector.connect_landmarks(frame, cond.landmarks[1], cond.landmarks[2], color)
                 
             return frame, message
 
@@ -56,41 +51,41 @@ class TreningWspierany(TCFW):
     def update_frame(self, dt):
         super().update_frame(dt, False)
         
-        if self.frontFrame is None or self.sideFrame is None:
+        if self.front_frame is None or self.side_frame is None:
             return
 
-        if self.screenExcersise and self.screenExcersise.is_running:
+        if self.screen_excersise and self.screen_excersise.is_running:
             if self.debug:
-                print(self.screenExcersise.getStateMessage())
+                print(self.screen_excersise.get_state_message())
             
-            is_pose_correct, isStateEnded = self.screenExcersise.checkExcersise(self.landmarksFront, self.landmarksSide)            
+            is_pose_correct, isStateEnded = self.screen_excersise.check_excersise(self.landmarks_front, self.landmarks_side)
             if self.debug:
                 print(is_pose_correct, isStateEnded)
             if isStateEnded:
                 if self.debug:
                     print('zmieniam stan')
-                    print(self.screenExcersise.getStateMessage())
-                    print(self.screenExcersise.getEndStats())
+                    print(self.screen_excersise.get_state_message())
+                    print(self.screen_excersise.get_end_stats())
 
             message = None
                     
-            if self.landmarksFront and self.landmarksSide:
-                condFront, condSide = self.screenExcersise.getStateConditions()
+            if self.landmarks_front and self.landmarks_side:
+                condFront, condSide = self.screen_excersise.get_state_conditions()
                 
                 # --- PRZETWARZANIE KAMERY PRZEDNIEJ ---
                 self.frontFrame, message = self.process_frame(
-                    self.frontFrame, 
+                    self.front_frame,
                     self.detector_front, 
-                    self.landmarksFront, 
+                    self.landmarks_front,
                     condFront, 
                     message
                 )
                 
                 # --- PRZETWARZANIE KAMERY BOCZNEJ ---
                 self.sideFrame, message = self.process_frame(
-                    self.sideFrame, 
+                    self.side_frame,
                     self.detector_side, 
-                    self.landmarksSide, 
+                    self.landmarks_side,
                     condSide, 
                     message
                 )
@@ -112,17 +107,17 @@ class TreningWspierany(TCFW):
             
 
         else:
-            if self.screenExcersise and self.screenExcersise.is_saved:
+            if self.screen_excersise and self.screen_excersise.is_saved:
                 self.set_title_text("TRENING ZAPISANY", (0.2, 0.6, 1, 1))
-            elif self.screenExcersise and self.screenExcersise.has_run:
+            elif self.screen_excersise and self.screen_excersise.has_run:
                 self.set_title_text("ZAKONCZONO - ZAPISZ TRENING",(1, 0.8, 0, 1))
             else:
                 self.set_title_text("ROZPOCZNIJ CWICZENIE")
 
-        if self.frontFrame is not None:
-            self.camera_view.texture = self.frameToTexture(self.frontFrame)
-        if self.sideFrame is not None:
-            self.camera_view2.texture = self.frameToTexture(self.sideFrame)
+        if self.front_frame is not None:
+            self.camera_view.texture = self.frame_to_texture(self.front_frame)
+        if self.side_frame is not None:
+            self.camera_view2.texture = self.frame_to_texture(self.side_frame)
 
 
 
@@ -181,8 +176,8 @@ class TreningWspierany(TCFW):
     def confirm_exit(self, target_screen):
         self.exit_popup.dismiss()
         print("Trening przerwany. Ćwiczenie nie zostało zapisane.")
-        if self.screenExcersise:
-            self.screenExcersise.is_running = False
+        if self.screen_excersise:
+            self.screen_excersise.is_running = False
         self.manager.current = target_screen
         
     def on_base_save_click(self, training_type_int:int = 0):

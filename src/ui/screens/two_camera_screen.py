@@ -2,33 +2,29 @@ from kivy.properties import partial
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.screenmanager import Screen
-from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.image import Image
 from kivy.clock import Clock
 from kivy.graphics.texture import Texture
 import cv2
-from kivy.core.window import Window
-from kivy.graphics import Color, RoundedRectangle
-from layout_api.components.RoundedButton import RoundedButton
-from layout_api.components.HoverableRoundedButton import HoverableRoundedButton
+from ui.components.rounded_button import RoundedButton
+from ui.components.hoverable_rounded_button import HoverableRoundedButton
 
-import detection.excersises as Ex
-import detection.base_detection as Bd
-import database.database_manager as DBM
+import vision.excersises as Ex
+import core.database_manager as DBM
 
-class TwoCameraFrameWindow(Screen):
+class TwoCameraScreen(Screen):
 
-    def __init__(self, screenExcersise:Ex.Exercise, **kwargs):
+    def __init__(self, screen_excersise:Ex.Exercise, **kwargs):
         super().__init__(**kwargs)
         self.shared_detector = None
-        self.screenExcersise: Ex.Exercise = screenExcersise
+        self.screen_excersise: Ex.Exercise = screen_excersise
 
-        self.landmarksFront = []
-        self.landmarksSide = []
+        self.landmarks_front = []
+        self.landmarks_side = []
         
-        self.frontFrame = None
-        self.sideFrame = None
+        self.front_frame = None
+        self.side_frame = None
         self.cap = None
         self.cap2 = None
         self.update_event = None
@@ -107,16 +103,16 @@ class TwoCameraFrameWindow(Screen):
 
         wrists = []
         for idx in [15, 17, 19, 16, 18, 20]:
-            lm = self.detector_front.getLandmarkCords(idx)
+            lm = self.detector_front.get_landmark_cords(idx)
             if lm:
                 kivy_x = self.camera_view.x + (lm[0] * self.camera_view.width)
                 kivy_y = self.camera_view.y + ((1.0 - lm[1]) * self.camera_view.height)
                 wrists.append((kivy_x, kivy_y))
 
-        if self.screenExcersise:
-            self.btn_save.is_hover_active = (self.screenExcersise.has_run and 
-                                             not self.screenExcersise.is_running and 
-                                             not self.screenExcersise.is_saved)
+        if self.screen_excersise:
+            self.btn_save.is_hover_active = (self.screen_excersise.has_run and
+                                             not self.screen_excersise.is_running and
+                                             not self.screen_excersise.is_saved)
             
         if hasattr(self, 'btn_start'):
             self.btn_start.process_hover(wrists)
@@ -125,9 +121,9 @@ class TwoCameraFrameWindow(Screen):
             self.btn_save.process_hover(wrists)
 
     def on_base_start_click(self):
-        if not self.screenExcersise: return
+        if not self.screen_excersise: return
 
-        is_now_running = self.screenExcersise.toggle_running()
+        is_now_running = self.screen_excersise.toggle_running()
 
         if is_now_running:
             print("Trening ROZPOCZĘTY!")
@@ -139,13 +135,13 @@ class TwoCameraFrameWindow(Screen):
             self.btn_start.bg_color = (0, 0.7, 0, 1)
 
     def on_base_save_click(self, training_type_int:int = 0):
-        if not self.screenExcersise: return
+        if not self.screen_excersise: return
         
-        can_save = self.screenExcersise.has_run and not self.screenExcersise.is_running and not self.screenExcersise.is_saved
+        can_save = self.screen_excersise.has_run and not self.screen_excersise.is_running and not self.screen_excersise.is_saved
         
         if can_save:
             print("Trening ZAPISANY!")
-            self.screenExcersise.mark_as_saved() 
+            self.screen_excersise.mark_as_saved()
             self.btn_save.text = "ZAPISANO"
             self.btn_save.bg_color = (0.6, 0, 0, 1)
             
@@ -155,14 +151,14 @@ class TwoCameraFrameWindow(Screen):
             current_time = datetime.now()
             end_time_str = current_time.strftime("%H:%M:%S")
             
-            start_timestamp = getattr(self.screenExcersise, '_timeOfExcersiseStart', time.time())
+            start_timestamp = getattr(self.screen_excersise, '_time_of_exercise_start', time.time())
             start_time_obj = datetime.fromtimestamp(start_timestamp)
             start_time_str = start_time_obj.strftime("%H:%M:%S")
-            nazwa = self.screenExcersise._excersiseName
-            stats = self.screenExcersise.getEndStats()
+            nazwa = self.screen_excersise._excersise_name
+            stats = self.screen_excersise.get_end_stats()
             
             try:
-                trening_id = self.databaseManager.save_training(training_type_int, start_time_str, end_time_str, nazwa, stats)
+                trening_id = self.database_manager.save_training(training_type_int, start_time_str, end_time_str, nazwa, stats)
                 print(f"Pomyślnie wstawiono rekord. ID Treningu: {trening_id}")
             except Exception as e:
                 print(f"Błąd podczas zapisu do bazy danych: {e}")
@@ -177,7 +173,7 @@ class TwoCameraFrameWindow(Screen):
     def on_enter(self):
         self.detector_front = self.manager.shared_detector_front
         self.detector_side = self.manager.shared_detector_side
-        self.databaseManager:DBM.DatabaseManager = self.manager.shared_db_manager
+        self.database_manager:DBM.DatabaseManager = self.manager.shared_db_manager
         Clock.schedule_once(self._late_camera_init, 0.2)
 
     def _late_camera_init(self, dt):
@@ -193,32 +189,32 @@ class TwoCameraFrameWindow(Screen):
         else:
             print("Kamera zablokowana przez system lub niedostępna.")
 
-    def update_frame(self, dt, toTexture: bool = True):
+    def update_frame(self, dt, to_texture: bool = True):
         if (not self.cap or not self.cap.isOpened()) and (not self.cap2 or not self.cap2.isOpened()):
             return
 
         self.handle_base_hover()
 
         if self.cap and self.cap.isOpened():
-            self.frontFrame, self.landmarksFront = self.update_camera(self.cap, self.detector_front)
-            if toTexture and self.frontFrame is not None:
-                self.camera_view.texture = self.frameToTexture(self.frontFrame)
+            self.front_frame, self.landmarks_front = self.update_camera(self.cap, self.detector_front)
+            if to_texture and self.front_frame is not None:
+                self.camera_view.texture = self.frame_to_texture(self.front_frame)
 
         if self.cap2 and self.cap2.isOpened():
-            self.sideFrame, self.landmarksSide = self.update_camera(self.cap2, self.detector_side)
-            if toTexture and self.sideFrame is not None:
-                self.camera_view2.texture = self.frameToTexture(self.sideFrame)
+            self.side_frame, self.landmarks_side = self.update_camera(self.cap2, self.detector_side)
+            if to_texture and self.side_frame is not None:
+                self.camera_view2.texture = self.frame_to_texture(self.side_frame)
 
     def update_camera(self, cap, detector):
         ret, frame = cap.read()
         if ret:
             frame = cv2.flip(frame, 1)
             processed_frame, result = detector.process_frame(frame)
-            landmarks = detector.getLandmarks()
+            landmarks = detector.get_landmarks()
             return processed_frame, landmarks
         return None, []
 
-    def frameToTexture(self,frame):
+    def frame_to_texture(self, frame):
         if frame is None:
             return None
         buf = cv2.flip(frame, 0).tobytes()
