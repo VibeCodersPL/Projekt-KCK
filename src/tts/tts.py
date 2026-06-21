@@ -10,7 +10,7 @@ class TTS:
     def __init__(self):
         self.message_queue = queue.Queue()
         self.is_speaking = False
-        self._current_sound = None  # TRZYMAMY REFERENCJĘ! Zapobiega crashom Garbage Collectora
+        self._current_sound = None
         base_dir = os.path.dirname(os.path.abspath(__file__))
         self.temp_dir = os.path.join(base_dir, '..', '..', 'temp')
         os.makedirs(self.temp_dir, exist_ok=True)
@@ -32,20 +32,17 @@ class TTS:
             temp_path = None
             
             try:
-                # 1. Wygenerowanie pliku mp3 z gTTS
                 tts = gTTS(text=phrase, lang='pl')
                 fd, temp_path = tempfile.mkstemp(suffix=".mp3", dir=self.temp_dir)
                 os.close(fd)
                 tts.save(temp_path)
                 
                 print(f"[TTS] Odtwarzanie pliku: {temp_path}", flush=True)
-                # 2. Odtworzenie pliku z bezpieczną synchronizacją z Kivy
                 self._play_audio_sync(temp_path)
                 
             except Exception as e:
                 print(f"[TTS] Błąd gTTS: {e}", flush=True)
             finally:
-                # 3. Zawsze bezpiecznie usuwaj plik z dysku
                 if temp_path and os.path.exists(temp_path):
                     try:
                         os.remove(temp_path)
@@ -59,16 +56,11 @@ class TTS:
     def _play_audio_sync(self, path):
         """Synchronizuje odtwarzanie dźwięku z głównym wątkiem interfejsu Kivy."""
         playback_event = threading.Event()
-        
-        # Bezpieczne zlecenie odtworzenia w wątku głównym UI (zapobiega crashom OpenGL)
         Clock.schedule_once(lambda dt: self._kivy_play(path, playback_event), 0)
-        
-        # Oczekujemy na zakończenie (z twardym limitem 10s na wypadek zwiechy SDL2)
         playback_event.wait(timeout=10.0)
 
     def _kivy_play(self, path, playback_event):
         """Ta metoda JEST wykonywana w głównym wątku Kivy."""
-        # KLUCZOWA POPRAWKA: Przypisujemy do `self`, aby GC nie zniszczył obiektu w locie!
         self._current_sound = SoundLoader.load(path)
         
         if self._current_sound:
@@ -95,5 +87,14 @@ class TTS:
             self.message_queue.put(phrase)
 
     def stop(self):
-        """Zatrzymuje całkowicie wątek"""
-        self.message_queue.put(None)
+        with self.message_queue.mutex:
+            self.message_queue.queue.clear()
+        Clock.schedule_once(self._force_stop, 0)
+
+    def _force_stop(self, dt):
+        if getattr(self, '_current_sound', None):
+            self._current_sound.stop()
+            self._current_sound.unload()
+            self._current_sound = None
+
+        self.is_speaking = False

@@ -107,7 +107,7 @@ class WzorowyPokazScreen(Screen):
         Clock.schedule_once(self._late_camera_init, 0.2)
 
     def _late_camera_init(self, dt):
-        self.cap = cv2.VideoCapture(0)
+        self.cap = cv2.VideoCapture(1)
         if self.cap.isOpened():
             self.update = Clock.schedule_interval(self.update_frame, 1 / 30)
         else:
