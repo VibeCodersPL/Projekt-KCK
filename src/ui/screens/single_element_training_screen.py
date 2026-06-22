@@ -13,7 +13,7 @@ class SingleElementTrainingScreen(TCFW):
         self.tts = None 
         self.last_tts_message = 0
         self.tts_time = 4
-        self.debug = True
+        self.debug = False
         
         self.is_low_ready_active = True 
 

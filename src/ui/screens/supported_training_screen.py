@@ -14,7 +14,7 @@ class SupportedTrainingScreen(TCFW):
         self.last_tts_message = 0
         self.tts_time = 4
         
-        self.debug = True
+        self.debug = False
 
     def on_enter(self):
         super().on_enter()
