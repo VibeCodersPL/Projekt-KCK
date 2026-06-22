@@ -6,17 +6,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.image import Image
 from kivy.uix.screenmanager import Screen
 from kivy.properties import partial
 
-from layout_api.components.RoundedButton import RoundedButton
-from layout_api.components.HoverableRoundedButton import HoverableRoundedButton
+from ui.components.rounded_button import RoundedButton
 
 
-class Statystyki(Screen):
+class StatisticsScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 

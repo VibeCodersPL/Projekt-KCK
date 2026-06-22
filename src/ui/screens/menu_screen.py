@@ -1,28 +1,21 @@
 from kivy.core.window import Window
-from kivy.properties import partial
 from kivy.uix.anchorlayout import AnchorLayout
-from kivy.uix.floatlayout import FloatLayout
-from kivy.uix.label import Label
 from kivy.uix.widget import Widget
 from kivy.uix.screenmanager import ScreenManager, Screen,NoTransition
 from kivy.app import App
-from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.button import Button
-from kivy.graphics import RoundedRectangle, Color
 from kivy.uix.image import Image
-from kivy.clock import Clock
-from kivy.uix.popup import Popup
-from windows.Trening_Wspierany import *
-from windows.Wzorowy_Pokaz import *
-from windows.Trening_Jednego_Elementu import *
-from layout_api.components.HoverableRoundedButton import *
-from detection.base_detection import *
-from windows.PostawaStojaca import *
-from windows.PostawaKleczaca import *
-from tts.tts import *
-from database.database_manager import *
-from windows.Statystyki import *
-import detection.excersises as ex
+
+from ui.screens.kneeling_stance_screen import KneelingStanceScreen
+from ui.screens.perfect_demo_screen import PerfectDemoScreen
+from ui.screens.standing_stance_screen import StandingStanceScreen
+from ui.screens.statistics_screen import StatisticsScreen
+from ui.screens.supported_training_screen import *
+from ui.screens.single_element_training_screen import *
+from ui.components.hoverable_rounded_button import *
+from vision.base_detection import *
+from core.tts import *
+from core.database_manager import *
+import vision.excersises as ex
 
 class MenuScreen(Screen):
     def __init__(self, **kwargs):
@@ -61,7 +54,7 @@ class MenuScreen(Screen):
         root.add_widget(layout)
         self.add_widget(root)
         self.cursor = Image(
-            source='./assets/lapka1.png',
+            source='ui/assets/lapka1.png',
             size_hint=(None, None),
             size=(100, 100),
             pos = (-100,-100)
@@ -110,7 +103,7 @@ class MenuScreen(Screen):
         popup.dismiss()
         
         screen = self.manager.get_screen(target_screen_name)
-        screen.screenExcersise = exercise_obj
+        screen.screen_excersise = exercise_obj
         
         self.manager.current = target_screen_name
 
@@ -146,7 +139,7 @@ class MenuScreen(Screen):
 
         
         self.cursor.pos = (-100, -100)
-        self.cursor.source = "./assets/lapka1.png"
+        self.cursor.source = "ui/assets/lapka1.png"
         for button in self.menu_buttons:
             button.process_hover([])
  
@@ -176,7 +169,7 @@ class MenuScreen(Screen):
 
         interaction_points = []
         for idx in [15, 17, 19, 16, 18, 20]:
-            lm = self.detector_front.getLandmarkCords(idx)
+            lm = self.detector_front.get_landmark_cords(idx)
             if lm:
                 win_x = lm[0] * Window.width
                 win_y = (1.0 - lm[1]) * Window.height
@@ -187,7 +180,7 @@ class MenuScreen(Screen):
 
         if interaction_points:
             # aktualizacja pozycji kursora wizualnego
-            main_lm = self.detector_front.getLandmarkCords(19)
+            main_lm = self.detector_front.get_landmark_cords(19)
             if main_lm:
                 cursor_x = main_lm[0] * Window.width
                 cursor_y = (1.0 - main_lm[1]) * Window.height
@@ -206,14 +199,14 @@ class MenuScreen(Screen):
                     is_any_hovered = True
 
             if is_any_hovered:
-                self.cursor.source = "./assets/lapka2.png"
+                self.cursor.source = "ui/assets/lapka2.png"
             else:
-                self.cursor.source = "./assets/lapka1.png"
+                self.cursor.source = "ui/assets/lapka1.png"
 
         else:
             #brak ręki w kadrze
             self.cursor.pos = (-100, -100)
-            self.cursor.source = "./assets/lapka1.png"
+            self.cursor.source = "ui/assets/lapka1.png"
             for button in current_buttons:
                 button.process_hover([])
                 
@@ -229,12 +222,12 @@ class Menu(App):
         sm.shared_tts = TTS()
         sm.shared_db_manager = DatabaseManager()
         sm.add_widget(MenuScreen(name='menu'))
-        sm.add_widget(TreningWspierany(screenExcersise=ex.StandingStance(),name='Trening wspierany'))
-        sm.add_widget(Trening_Jednego_Elementu(screenExcersise=ex.StandingStance(),name='TreningJednegoElementu'))
-        sm.add_widget(WzorowyPokazScreen(name='WzorowyPokaz'))
-        sm.add_widget(PostawaStojaca(name='PostawaStojaca'))
-        sm.add_widget(PostawaKleczaca(name='PostawaKleczaca'))
-        sm.add_widget(Statystyki(name='Statystyki'))
+        sm.add_widget(SupportedTrainingScreen(screen_excersise=ex.StandingStance(), name='Trening wspierany'))
+        sm.add_widget(SingleElementTrainingScreen(screen_excersise=ex.StandingStance(), name='TreningJednegoElementu'))
+        sm.add_widget(PerfectDemoScreen(name='WzorowyPokaz'))
+        sm.add_widget(StandingStanceScreen(name='PostawaStojaca'))
+        sm.add_widget(KneelingStanceScreen(name='PostawaKleczaca'))
+        sm.add_widget(StatisticsScreen(name='Statystyki'))
         return sm
 
 
