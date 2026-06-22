@@ -14,7 +14,6 @@ import vision.excersises as Ex
 import core.database_manager as DBM
 
 class TwoCameraScreen(Screen):
-
     def __init__(self, screen_excersise:Ex.Exercise, **kwargs):
         super().__init__(**kwargs)
         self.shared_detector = None

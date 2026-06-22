@@ -80,13 +80,11 @@ class Exercise:
         self.__last_frames_correctness_array: list[bool] = [False] * self.__CORRECT_FRAMES
         self.__last_frames_correctness_metric_array: list[bool] = [False] * self.__CORRECT_FRAMES
         self._states: dict[str, State] = {}
-        self._states["DEFAULT"] = State()
-        self._current_state = self._states.get("DEFAULT")
+        self._current_state = None
         self._time_of_excersise_start = 0
         self.is_running = False
         self.has_run = False
         self.is_saved = False
-        self._current_state.start()
         self.messages = None
     def start_excersise(self):
         self.is_running = True
@@ -320,6 +318,8 @@ class StandingStance(Exercise):
         arms_side = [
             Condition([11, 13, 15], degree=130, tolerance=0.2, message="Skoryguj wysokość uniesienia broni")
         ]
+        
+        self._states["LowReady"] = get_low_ready_state()
 
         self._states["Legs"] = State(
             condition_front=legs_front,
@@ -338,19 +338,16 @@ class StandingStance(Exercise):
             condition_side=legs_side + torso_side + arms_side,
             messege="Złóż się do strzału. Zablokuj ramiona w ramie."
         )
+        self._current_state = self._states.get("LowReady")
+        self._current_state.start()
+        self._time_of_state_start = self._current_state.start_time
 
-        self._currentState = self._states.get("Legs")
-        self._currentState.start()
-        self._timeOfStateStart = self._currentState.start_time
-           
 class KneelingStance(Exercise):
     def __init__(self):
         super().__init__("KneelingStance")
         self.messages = tts_messages.get("CwiczenieStojaca", [])
         
         legs_front = [
-            Condition([24, 26, 28], degree=155, tolerance=0.15, message=self.get_message(0)),#lewa noga
-            Condition([23, 25, 27], degree=40, tolerance=0.45, message=self.get_message(0)) 
         ]
         legs_side = [
             Condition([24, 26, 28], degree=100, tolerance=0.15, message=self.get_message(0)),#lewa noga
@@ -362,7 +359,7 @@ class KneelingStance(Exercise):
             Condition([11, 23, 25], degree=170, tolerance=0.1, message="Ustaw tułów frontalnie")
         ]
         torso_side = [
-            Condition([25, 23, 1], degree=170, tolerance=0.1, message="Ustaw tułów frontalnie"), 
+            Condition([25, 23, 11], degree=170, tolerance=0.1, message="Ustaw tułów frontalnie"), 
 
         ]
 
@@ -372,6 +369,10 @@ class KneelingStance(Exercise):
         arms_side = [
             Condition([11, 13, 15], degree=130, tolerance=0.2, message="Skoryguj wysokość uniesienia broni")
         ]
+
+
+        self._states["LowReady"] = get_low_ready_state()
+
 
         self._states["Legs"] = State(
             condition_front=legs_front,
@@ -390,7 +391,42 @@ class KneelingStance(Exercise):
             condition_side=legs_side + torso_side + arms_side,
             messege="Złóż się do strzału. Zablokuj ramiona w ramie."
         )
-
-        self._current_state = self._states.get("Legs")
+        
+        self._current_state = self._states.get("LowReady")
         self._current_state.start()
         self._time_of_state_start = self._current_state.start_time
+
+        
+        
+        
+def get_low_ready_state() -> State:
+    
+    legs_front = [
+        Condition([24, 26, 28], degree=175, tolerance=0.1, message="Wyprostuj prawą nogę"),
+        Condition([23, 25, 27], degree=175, tolerance=0.1, message="Wyprostuj lewą nogę")
+    ]
+    legs_side = [
+        Condition([23, 25, 27], degree=175, tolerance=0.1, message="Nie uginaj kolan")
+    ]
+
+    torso_front = [
+        Condition([12, 24, 26], degree=175, tolerance=0.1, message="Wyprostuj się"), 
+        Condition([11, 23, 25], degree=175, tolerance=0.1, message="Wyprostuj się")
+    ]
+    torso_side = [
+        Condition([11, 23, 25], degree=175, tolerance=0.1, message="Wyprostuj plecy"), 
+    ]
+
+    arms_front = [
+        Condition([11, 13, 15], degree=125, tolerance=0.5, message="Trzymajbroń przy ciele"),   
+        Condition([23, 11, 13], degree=15, tolerance=0.5, message="Trzymaj łokcie bliżej ciała")    
+    ]
+    arms_side = [
+        Condition([12, 14, 16], degree=170, tolerance=0.15, message="Opuść lufę broni w dół")
+    ]
+
+    return State(
+        condition_front=legs_front + torso_front + arms_front,
+        condition_side=legs_side + torso_side + arms_side,
+        messege="Przyjmij postawę swobodną. Wyprostuj się i opuść broń."
+    )

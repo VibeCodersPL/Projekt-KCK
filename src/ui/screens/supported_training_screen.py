@@ -14,7 +14,7 @@ class SupportedTrainingScreen(TCFW):
         self.last_tts_message = 0
         self.tts_time = 4
         
-        self.debug = False
+        self.debug = True
 
     def on_enter(self):
         super().on_enter()
@@ -62,6 +62,7 @@ class SupportedTrainingScreen(TCFW):
             if self.debug:
                 print(is_pose_correct, isStateEnded)
             if isStateEnded:
+                self.screen_excersise.set_state()
                 if self.debug:
                     print('zmieniam stan')
                     print(self.screen_excersise.get_state_message())
@@ -73,7 +74,7 @@ class SupportedTrainingScreen(TCFW):
                 condFront, condSide = self.screen_excersise.get_state_conditions()
                 
                 # --- PRZETWARZANIE KAMERY PRZEDNIEJ ---
-                self.frontFrame, message = self.process_frame(
+                self.front_frame, message = self.process_frame(
                     self.front_frame,
                     self.detector_front, 
                     self.landmarks_front,
@@ -82,7 +83,7 @@ class SupportedTrainingScreen(TCFW):
                 )
                 
                 # --- PRZETWARZANIE KAMERY BOCZNEJ ---
-                self.sideFrame, message = self.process_frame(
+                self.side_frame, message = self.process_frame(
                     self.side_frame,
                     self.detector_side, 
                     self.landmarks_side,
